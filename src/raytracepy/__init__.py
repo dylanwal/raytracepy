@@ -1,5 +1,5 @@
 number_type = "float64"
-
+_jit = False
 
 def default_plot_layout(fig):
     fig.update_layout(autosize=False, width=900, height=790, showlegend=False,
@@ -10,6 +10,7 @@ def default_plot_layout(fig):
                      linecolor='black', showgrid=False, gridwidth=1, gridcolor='lightgray')
 
 
-from .light_layouts import CirclePattern, GridPattern
+from .light_layouts import CirclePattern, GridPattern,OffsetGridPattern
+from .light import Light
 
-__all__ = ["CirclePattern", "GridPattern"]
+__all__ = ["CirclePattern", "GridPattern", "OffsetGridPattern", "Light", "_jit"]

@@ -47,10 +47,10 @@ class SimData:
                                                  range=[plane.range[0:2], plane.range[2:4]])
 
         try:
-            if self.hist[plane.id] == 0:
-                self.hist[plane.id] = his
+            if self.hist[plane._id] == 0:
+                self.hist[plane._id] = his
         except ValueError:
-            self.hist[plane.id] = np.add(self.hist[plane.id], his)
+            self.hist[plane._id] = np.add(self.hist[plane._id], his)
 
     def plot_hist(self):
         for plane, hist in zip(self.planes, self.hist):
@@ -67,7 +67,7 @@ class SimData:
         print(f"number of lights in simulation: {len(self.lights)}")
         print(f"number of planes in simulation: {len(self.planes)}")
         for hist, plane in zip(self.hist, self.data_planes):
-            print(f"Plane: \tid: {plane.id} \t type: {plane.trans_type}")
+            print(f"Plane: \tid: {plane._id} \t type: {plane.trans_type}")
             print(f"rays hit surface: {np.sum(hist)}, ({np.sum(hist)/self.num_rays})")
 
     def percentile_table(self, normalized=False):
@@ -75,7 +75,7 @@ class SimData:
         headers = ["min", "1", "5", "10", "mean", "90", "95", "99", "max"]
         if normalized:
             for hist, plane in zip(self.hist, self.data_planes):
-                print(f"Plane: \tid: {plane.id} \t type: {plane.trans_type}")
+                print(f"Plane: \tid: {plane._id} \t type: {plane.trans_type}")
                 his_array = np.reshape(hist, (hist.shape[0] * hist.shape[1],))
                 mean = np.mean(his_array)
                 data = [sig_figs(np.min(his_array)),
@@ -92,7 +92,7 @@ class SimData:
                 print(tabulate([data], headers=headers))
         else:
             for hist, plane in zip(self.hist, self.data_planes):
-                print(f"Plane: \tid: {plane.id} \t type: {plane.trans_type}")
+                print(f"Plane: \tid: {plane._id} \t type: {plane.trans_type}")
                 his_array = np.reshape(hist, (hist.shape[0] * hist.shape[1],))
                 mean = np.mean(his_array)
                 data = [sig_figs(np.min(his_array)),
