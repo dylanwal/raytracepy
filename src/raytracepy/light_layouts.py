@@ -19,7 +19,7 @@ class PointPattern(ABC):
 
     @property
     @abstractmethod
-    def xy_points(self): # pragma: no cover
+    def xy_points(self):  # pragma: no cover
         raise NotImplementedError
 
     def plot_add(self, fig, **kwargs):  # pragma: no cover
@@ -33,14 +33,12 @@ class PointPattern(ABC):
 
         fig.add_trace(go.Scatter(x=self.xy_points[:, 0], y=self.xy_points[:, 1], **styling))
 
-    def plot_create(self): # pragma: no cover
+    def plot_create(self):  # pragma: no cover
         """ Create a plot of setup. """
         fig = go.Figure()
         self.plot_add(fig)
         default_plot_layout(fig)
 
-        fig.write_html('tmp.html', auto_open=True)
-        #fig.show()
         return fig
 
 
@@ -401,3 +399,5 @@ class OffsetGridPattern(PointPattern):
                     self.corner[1] + dy * ii
                 ]
                 k += 1
+
+# Add spiral

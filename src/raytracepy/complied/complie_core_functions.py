@@ -1,12 +1,12 @@
-from typing import Union
-
 import numpy as np
-from numba import njit, config
 
-config.DISABLE_JIT = False
+from numba.pycc import CC
+
+cc = CC('core_functions')
+cc.verbose = True
 
 
-@njit
+@cc.export("normalise_f", 'f8[:](f8[:])')
 def normalise(vector: np.ndarray) -> np.ndarray:
     """
     Object is guaranteed to be a unit quaternion after calling this
@@ -19,7 +19,7 @@ def normalise(vector: np.ndarray) -> np.ndarray:
         return vector
 
 
-@njit
+#@cc.export("spherical_to_cartesian_f", 'f8[:](f8[:])')
 def spherical_to_cartesian(spherical: np.ndarray) -> np.ndarray:
     """
     Converts spherical coordinates (theta, phi, r) into cartesian coordinates [x, y, z]
@@ -30,9 +30,6 @@ def spherical_to_cartesian(spherical: np.ndarray) -> np.ndarray:
         r along z axis
     :return np.ndarray([x,y,z])
     """
-    if len(spherical.shape) == 1:
-        spherical = spherical.reshape(1, 3)
-
     theta = spherical[:, 0]
     phi = spherical[:, 1]
     r = spherical[:, 2]
@@ -51,7 +48,7 @@ def spherical_to_cartesian(spherical: np.ndarray) -> np.ndarray:
     return mat
 
 
-@njit
+@cc.export("refection_vector_f", 'f8[:](f8[:],f8[:])')
 def refection_vector(vector: np.ndarray, plane_normal: np.ndarray) -> np.ndarray:
     """
     Calculates the reflection of incoming ray.
@@ -61,7 +58,7 @@ def refection_vector(vector: np.ndarray, plane_normal: np.ndarray) -> np.ndarray
     return -2 * np.dot(vector, plane_normal) * plane_normal + vector
 
 
-@njit
+@cc.export("check_in_plane_range_f", 'b1(f8[:],f8[:])')
 def check_in_plane_range(point: np.ndarray, plane_corners: np.ndarray) -> bool:
     """
     Checks if point is within the bounds of plane
@@ -96,7 +93,36 @@ def check_in_plane_range(point: np.ndarray, plane_corners: np.ndarray) -> bool:
     return True
 
 
-@njit
+@cc.export("q_conjugate_f", 'f8[:](f8[:])')
+def q_conjugate(q):
+    """w, x, y, z = q  ->   [w, -x, -y, -z]"""
+    return q * np.array([1, -1, -1, -1])
+
+
+@cc.export("q_matrix_f", 'f8[:,:](f8[:])')
+def q_matrix(q: np.ndarray) -> np.ndarray:
+    return np.array([[q[0], -q[1], -q[2], -q[3]],[q[1], q[0], -q[3], q[2]],[q[2], q[3], q[0], -q[1]],[q[3], -q[2], q[1], q[0]]], dtype="float64")
+
+
+@cc.export("rotate_quaternion_f", 'f8[:](f8[:],f8[:])')
+def rotate_quaternion(q: np.ndarray, rays: np.ndarray):
+    """Rotate a quaternion vector using the stored rotation.
+
+    Params:
+        vec: The vector to be rotated, in quaternion form (0 + xi + yj + kz)
+
+    Returns:
+        A Quaternion object representing the rotated vector in quaternion from (0 + xi + yj + kz)
+    """
+    if len(rays.shape) == 1:
+        q_ray = np.append(0, rays)
+        return np.dot(q_matrix(np.dot(q_matrix(q), q_ray)), q_conjugate(q))[1:]
+
+    q_ray = np.append(np.zeros(rays.shape[0]).reshape(rays.shape[0], 1), rays, axis=1)
+    return np.dot(q_matrix(np.dot(q_matrix(q), q_ray)), q_conjugate(q))[1:, :]
+
+
+@cc.export("rotate_vec_f", 'f8[:](f8[:],f8[:],f8[:])')
 def rotate_vec(rays: np.ndarray,
                direction: np.ndarray,
                prim_dir: np.ndarray = normalise(np.array([0, 0, 1], dtype='float64'))) -> np.ndarray:
@@ -127,7 +153,6 @@ def rotate_vec(rays: np.ndarray,
     return rotate_quaternion(q, rays)
 
 
-@njit
 def quaternion_from_axis_angle(axis: np.ndarray, angle: np.ndarray) -> np.ndarray:
     """
     Create a Quaternion
@@ -143,49 +168,10 @@ def quaternion_from_axis_angle(axis: np.ndarray, angle: np.ndarray) -> np.ndarra
     return np.append(q, r)
 
 
-@njit
-def rotate_quaternion(q: np.ndarray, rays: np.ndarray):
-    """Rotate a quaternion vector using the stored rotation.
-
-    Params:
-        vec: The vector to be rotated, in quaternion form (0 + xi + yj + kz)
-
-    Returns:
-        A Quaternion object representing the rotated vector in quaternion from (0 + xi + yj + kz)
-    """
-    if len(rays.shape) == 1:
-        q_ray = np.append(0, rays)
-        return np.dot(q_matrix(np.dot(q_matrix(q), q_ray)), q_conjugate(q))[1:]
-
-    q_ray = np.append(np.zeros(rays.shape[0]).reshape(rays.shape[0], 1), rays, axis=1)
-    q1 = np.dot(q_matrix(q), q_ray)
-    q2 = q_matrix(q1)
-    q3 = q_conjugate(q)
-    q_rotated = np.dot(q2, q3)
-
-    return q_rotated[1:, :]
-
-
-@njit
-def q_conjugate(q):
-    """w, x, y, z = q  ->   [w, -x, -y, -z]"""
-    return q*np.array([1, -1, -1, -1])
-
-
-@njit("f8[:,:](f8[:])")
-def q_matrix(q: np.ndarray) -> np.ndarray:
-    return np.array([
-        [q[0], -q[1], -q[2], -q[3]],
-        [q[1], q[0], -q[3], q[2]],
-        [q[2], q[3], q[0], -q[1]],
-        [q[3], -q[2], q[1], q[0]]], dtype="float64")
-
-
-@njit
 def plane_ray_intersection(rays_dir: np.ndarray,
                            rays_pos: np.ndarray,
                            plane_dir: np.ndarray,
-                           plane_pos: np.ndarray) -> Union[None, np.ndarray]:
+                           plane_pos: np.ndarray):
     """
     Given a rays position and direction, and given a plane position and normal direction; calculate the intersection
     point and angle.
@@ -212,11 +198,9 @@ def plane_ray_intersection(rays_dir: np.ndarray,
     return intersection
 
 
-@njit
 def get_phi(phi_rad: np.ndarray = np.array([0, 359.999], dtype="float64"), num_rays: int = 1) -> np.ndarray:
     """generate rays angles in spherical coordinates"""
     return (phi_rad[1] - phi_rad[0]) * np.random.random_sample(num_rays) + phi_rad[0]
-
 
 
 def create_ray(theta: np.ndarray, phi: np.ndarray, source_dir: np.ndarray) -> np.ndarray:
@@ -282,3 +266,7 @@ def check_ray_plane_hit(ray, planes):
                 return plane.uid, intersect_cord
 
     return None, None
+
+
+if __name__ == "__main__":
+    cc.compile()
