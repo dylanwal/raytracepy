@@ -42,4 +42,14 @@ class Light:
         self.num_rays = num_rays
 
     def __str__(self):
-        return f"Light|| position: {self.position}; direction: {self.direction}"
+        return f"Light (uid: {self.uid})|| pos: {self.position}; dir: {self.direction}"
+
+    def __repr__(self):
+        return self.print_stats()
+
+    def print_stats(self) -> str:
+        text = "\n"
+        text += f"Light: {self.name} ({self.uid})"
+        text += f"\n\t pos: {self.position}, dir: {self.direction}"
+        text += f"\n\t power: {self.power}, num_rays: {self.num_rays}"
+        return text

@@ -32,7 +32,9 @@ def main():
 
     # Analyze/plot output
     ground.plot_heat_map()
-
+    sim.print_stats()
+    ground.print_hit_stats()
+    ground.print_hit_stats(True)
     print("hi")
 
 

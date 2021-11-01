@@ -12,8 +12,8 @@ def main():
         name="ground",
         position=np.array([0, 0, 0], dtype='float64'),
         normal=np.array([0, 0, 1], dtype='float64'),
-        length=10,
-        width=10)
+        length=20,
+        width=20)
 
     # define lights
     grid = rpy.OffsetGridPattern(
@@ -22,31 +22,30 @@ def main():
         y_length=12.5,
         num_points=50)
 
-    height = 5
+    height = 10
     lights = []
     for xy_pos in grid.xy_points:
         lights.append(
             rpy.Light(
-                position=np.array(xy_pos + [height], dtype='float64'),
+                position=np.insert(xy_pos, 2, height),
                 direction=np.array([0, 0, -1], dtype='float64'),
-                emit_light_fun_id=1
             ))
 
     # Create ref_data class
-    data = rpy.RayTraceData(
+    sim = rpy.RayTrace(
         planes=ground,
         lights=lights,
-        num_rays=3_000_000
+        total_num_rays=1_500_000
     )
-
-    # pass setup/ref_data object to the simulation; then run the simulation
-    sim = rpy.RayTrace(data)
     sim.run()
 
     # Analyze/plot output
-    data.percentile_table()
-    data.percentile_table(normalized=True)
-    data.plot_hist()
+    sim.save_data()
+    ground.plot_heat_map()
+    # sim.print_stats()
+    ground.print_hit_stats()
+    ground.print_hit_stats(True)
+    print("hi")
 
 
 if __name__ == "__main__":

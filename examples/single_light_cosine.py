@@ -20,32 +20,31 @@ def single_run(x: float, z: float):
     light = rpy.Light(
         position=np.array([x, 0, z], dtype='float64'),
         direction=np.array([-x, 0, -z], dtype='float64'),  # so its always points back to [0, 0]
-        emit_light_fun_id=1
     )
 
     # Create ref_data class
-    data = rpy.RayTraceData(
+    sim = rpy.RayTrace(
         planes=ground,
-        lights=light
+        lights=light,
+        total_num_rays=10_000
     )
-
-    # pass setup/ref_data object to the simulation; then run the simulation
-    sim = rpy.RayTrace(data)
     sim.run()
 
     # Analyze/plot output
-    return data.plane["ground"].intensity
+    return float(ground.shape_grid(xy=np.array([[0, 0]]), r=2))
 
 
 def main():
     n = 10
-    x = np.linspace(0, np.pi/2, n)
-    z = np.sqrt(5-x)
-    data = np.empty((3, n))
+    x = np.linspace(0, 5, n)
+    z = np.sqrt(25-x**2)
+    a = np.pi/2 - np.arctan(z/x)
+    data = np.empty((4, n))
     for i in range(n):
-        data[i][0] = x
-        data[i][1] = z
-        data[i][2] = single_run(x[i], z[i])
+        data[i][0] = x[i]
+        data[i][1] = z[i]
+        data[i][2] = a[i]
+        data[i][3] = single_run(x[i], z[i])
         print(f"{i}: {data[i]}")
 
 

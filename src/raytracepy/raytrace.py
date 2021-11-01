@@ -1,9 +1,11 @@
 from typing import Protocol, List, Union
+import pickle
+import datetime
 
 import numpy as np
 
 from . import Plane, Light, time_it
-from .core_functions import trace_rays, get_phi, create_ray
+from .core_functions import trace_rays, get_phi, create_ray, trace_rays_lock
 
 
 class GeometryObject(Protocol):
@@ -55,8 +57,8 @@ class BaseList:
 
 class RayTrace:
     def __init__(self,
-                 planes: Plane,
-                 lights: Light,
+                 planes: Union[Plane, List[Plane]],
+                 lights: Union[Light, List[Light]],
                  total_num_rays: int = 10_000,
                  max_bounces: int = 0,
                  num_traces: int = 100):
@@ -68,6 +70,7 @@ class RayTrace:
         :param max_bounces:
         :param num_traces:
         """
+        self._run: bool = False
         self.planes = BaseList(planes)
         self.lights = BaseList(lights)
 
@@ -77,6 +80,26 @@ class RayTrace:
 
         self.traces_per_light = int(num_traces/len(self.lights))
         self.num_traces = self.traces_per_light * len(self.lights)
+
+    def __str__(self):
+        return f"Simulation || run:{self._run} num_lights: {len(self.lights)}; num_planes: {len(self.planes)}"
+
+    def __repr__(self):
+        return self.print_stats()
+
+    def save_data(self, file_name: str = None):
+        """ Save class in pickle format. """
+        if file_name is None:
+            _date = datetime.datetime.now().strftime("%Y_%m_%d-%I_%M_%S_%p")
+            file_name = f"data_{_date}"
+        with open(file_name + '.pickle', 'wb') as file:
+            pickle.dump(self, file)
+
+    @staticmethod
+    def load_data(file_name: str):
+        """ Load Pickled class. """
+        with open(file_name, 'rb') as file:
+            return pickle.load(file)
 
     def _set_rays_per_light(self):
         """ Give tootal_num_rays; distribute across all light by power."""
@@ -100,15 +123,30 @@ class RayTrace:
         return out
 
     @time_it
-    def run(self):
+    def run(self, multiproc: bool = False):
         """ Main Loop: Loop through each light and ray trace. """
-        for i, light in enumerate(self.lights):
-            self._raytrace_single_light(light)
-            print(f"Calculations for {i+1}/{len(self.lights)} complete.")
+        if multiproc:
+            from multiprocessing import Process, Lock
+
+            lock = Lock()
+            for i, light in enumerate(self.lights):
+                Process(target=self._raytrace_single_light_lock, args=(lock, light)).start()
+                print(f"Calculations for {i+1}/{len(self.lights)} complete.")
+
+        else:
+            for i, light in enumerate(self.lights):
+                self._raytrace_single_light(light)
+                print(f"Calculations for {i+1}/{len(self.lights)} complete.")
+
+        self._run = True
 
     def _raytrace_single_light(self, light: Light):
         ray_direction = self._create_ray(light)
         trace_rays(light.position,  ray_direction, self.planes, self.max_bounces)
+
+    def _raytrace_single_light_lock(self, lock,  light: Light):
+        ray_direction = self._create_ray(light)
+        trace_rays_lock(lock, light.position,  ray_direction, self.planes, self.max_bounces)
 
     @staticmethod
     def _create_ray(light: Light) -> np.ndarray:
@@ -121,6 +159,24 @@ class RayTrace:
         phi = get_phi(light.phi_rad, light.num_rays)
 
         return create_ray(theta, phi, light.direction)
+
+    def stats(self):
+        text = "\n"
+        text += f"Ray Trace Simulation Results (run: {self._run})"
+        text += "\n--------------------------------"
+        text += f"\nrays generated: {self.total_num_rays}"
+        text += f"\nmax bounces: {self.max_bounces}"
+        text += f"\nnumber of lights: {len(self.lights)}"
+        text += f"\nnumber of planes: {len(self.planes)}"
+        for light in self.lights:
+            text += light.print_stats()
+        for plane in self.planes:
+            text += plane.print_stats()
+
+        return text
+
+    def print_stats(self):
+        print(self.stats())
 
     # # unpack ref_data for planes of interest and save
     # for plane, index in zip(data.planes, data_plane_indexing):
@@ -137,98 +193,10 @@ class RayTrace:
     #     else:
     #         exit("TypeError in planes entry to main simulation loop.")
     #
-    #
-    #
-    #
-    #
-    #
-    #
-    #
-    #
-    #
-    # def histogram(self, plane, hits):
-    #     x, y, z = np.split(hits, 3, axis=1)
-    #     if plane.normal[0] == 0 and plane.normal[1] == 0:
-    #         his, xedges, yedges = np.histogram2d(np.asarray(x)[:, 0], np.asarray(y)[:, 0], bins=150,
-    #                                              range=[plane.range[0:2], plane.range[2:4]])
-    #     elif plane.normal[0] == 0 and plane.normal[2] == 0:
-    #         his, xedges, yedges = np.histogram2d(np.asarray(x)[:, 0], np.asarray(z)[:, 0], bins=150,
-    #                                              range=[plane.range[0:2], plane.range[2:4]])
-    #     else:
-    #         his, xedges, yedges = np.histogram2d(np.asarray(y)[:, 0], np.asarray(z)[:, 0], bins=150,
-    #                                              range=[plane.range[0:2], plane.range[2:4]])
-    #
-    #     try:
-    #         if self.hist[plane.uid] == 0:
-    #             self.hist[plane.uid] = his
-    #     except ValueError:
-    #         self.hist[plane.uid] = np.add(self.hist[plane.uid], his)
-    #
-    # def plot_hist(self):
-    #     for plane, hist in zip(self.planes, self.hist):
-    #         plotting.plot_hist(hist, plane)
-    #
+
     # def plot_traces(self):
     #     plotting.plot_traces(self.planes, self.lights, self.traces)
-    #
-    # def hit_stats(self):
-    #     print("\n")
-    #     print(f"rays generated: {self.num_rays}")
-    #     print(f"rays per light: {self.rays_per_light}")
-    #     print(f"max bounces: {self.max_bounces}")
-    #     print(f"number of lights in simulation: {len(self.lights)}")
-    #     print(f"number of planes in simulation: {len(self.planes)}")
-    #     for hist, plane in zip(self.hist, self.data_planes):
-    #         print(f"Plane: \tid: {plane.uid} \t type: {plane.trans_type}")
-    #         print(f"rays hit surface: {np.sum(hist)}, ({np.sum(hist)/self.num_rays})")
-    #
-    # def percentile_table(self, normalized=False):
-    #     print("\n")
-    #     headers = ["min", "1", "5", "10", "mean", "90", "95", "99", "max"]
-    #     if normalized:
-    #         for hist, plane in zip(self.hist, self.data_planes):
-    #             print(f"Plane: \tid: {plane.uid} \t type: {plane.trans_type}")
-    #             his_array = np.reshape(hist, (hist.shape[0] * hist.shape[1],))
-    #             mean = np.mean(his_array)
-    #             data = [sig_figs(np.min(his_array)),
-    #                     sig_figs(np.min(his_array)/mean),
-    #                     sig_figs(np.percentile(his_array, 1)/mean),
-    #                     sig_figs(np.percentile(his_array, 5)/mean),
-    #                     sig_figs(np.percentile(his_array, 10)/mean),
-    #                     sig_figs(mean/mean),
-    #                     sig_figs(np.percentile(his_array, 90)/mean),
-    #                     sig_figs(np.percentile(his_array, 95)/mean),
-    #                     sig_figs(np.percentile(his_array, 99)/mean),
-    #                     sig_figs(np.max(his_array)/mean)]
-    #
-    #             print(tabulate([data], headers=headers))
-    #     else:
-    #         for hist, plane in zip(self.hist, self.data_planes):
-    #             print(f"Plane: \tid: {plane.uid} \t type: {plane.trans_type}")
-    #             his_array = np.reshape(hist, (hist.shape[0] * hist.shape[1],))
-    #             mean = np.mean(his_array)
-    #             data = [sig_figs(np.min(his_array)),
-    #                     sig_figs(np.min(his_array)),
-    #                     sig_figs(np.percentile(his_array, 1)),
-    #                     sig_figs(np.percentile(his_array, 5)),
-    #                     sig_figs(np.percentile(his_array, 10)),
-    #                     sig_figs(mean),
-    #                     sig_figs(np.percentile(his_array, 90)),
-    #                     sig_figs(np.percentile(his_array, 95)),
-    #                     sig_figs(np.percentile(his_array, 99)),
-    #                     sig_figs(np.max(his_array))]
-    #
-    #             print(tabulate([data], headers=headers))
-    #
-    # def save_data(self, file_name: str = "ref_data"):
-    #     with open(file_name + '.pickle', 'wb') as file:
-    #         pickle.dump(self, file)
-    #
-    # @staticmethod
-    # def load_data(file_name: str = "ref_data"):
-    #     with open(file_name + '.pickle', 'rb') as file2:
-    #         return pickle.load(file2)
-    #
+
     # def plotting_light_positions(positions):
     #     """
     #     Takes x,y and generates a simple plot of light locations.

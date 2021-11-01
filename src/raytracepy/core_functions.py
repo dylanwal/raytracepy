@@ -3,7 +3,7 @@ from typing import Union
 import numpy as np
 from numba import njit, config
 
-config.DISABLE_JIT = False
+config.DISABLE_JIT = True
 
 
 @njit
@@ -143,20 +143,14 @@ def quaternion_from_axis_angle(axis: np.ndarray, angle: np.ndarray) -> np.ndarra
     return np.append(q, r)
 
 
-@njit
+@njit("f8[:](f8[:],f8[:])")
 def rotate_quaternion(q: np.ndarray, rays: np.ndarray):
-    """Rotate a quaternion vector using the stored rotation.
-
-    Params:
-        vec: The vector to be rotated, in quaternion form (0 + xi + yj + kz)
-
-    Returns:
-        A Quaternion object representing the rotated vector in quaternion from (0 + xi + yj + kz)
     """
-    if len(rays.shape) == 1:
-        q_ray = np.append(0, rays)
-        return np.dot(q_matrix(np.dot(q_matrix(q), q_ray)), q_conjugate(q))[1:]
-
+    Rotate a quaternion vector using the stored rotation.
+    :param q: quaternion form (0 + xi + yj + kz)
+    :param rays: The vector to be rotated, in
+    :return rotated vectors
+    """
     q_ray = np.append(np.zeros(rays.shape[0]).reshape(rays.shape[0], 1), rays, axis=1)
     q1 = np.dot(q_matrix(q), q_ray)
     q2 = q_matrix(q1)
@@ -218,7 +212,6 @@ def get_phi(phi_rad: np.ndarray = np.array([0, 359.999], dtype="float64"), num_r
     return (phi_rad[1] - phi_rad[0]) * np.random.random_sample(num_rays) + phi_rad[0]
 
 
-
 def create_ray(theta: np.ndarray, phi: np.ndarray, source_dir: np.ndarray) -> np.ndarray:
     """
     :return: direction vector of ray [[x1,y1,z1], [x2,y2,z2]]
@@ -252,6 +245,32 @@ def trace_ray(ray: np.ndarray, planes, max_bounces: int):
             planes[plane_uid].hits = np.vstack((planes[plane_uid].hits, hit))
         except ValueError:
             planes[plane_uid].hits = hit
+
+
+def trace_rays_lock(lock, ray_position: np.ndarray, ray_direction: np.ndarray, planes, max_bounces):
+    for ray_dir in ray_direction:
+        ray = np.hstack((ray_dir, ray_position))
+        trace_ray_lock(lock, ray, planes, max_bounces)
+
+
+def trace_ray_lock(lock, ray: np.ndarray, planes, max_bounces: int):
+    for bounce in range(max_bounces + 1):
+        plane_uid, hit = check_ray_plane_hit(ray, planes)
+
+        if bounce <= max_bounces and plane_uid is not None:
+            ray = check_bounce_transmit(planes[plane_uid], ray, hit)
+            if ray is None:
+                break  # ray absorbed
+
+    if plane_uid is not None:
+        lock.acquire()
+        try:
+            try:
+                planes[plane_uid].hits = np.vstack((planes[plane_uid].hits, hit))
+            except ValueError:
+                planes[plane_uid].hits = hit
+        finally:
+            lock.release()
 
 
 def check_bounce_transmit(plane, ray: np.ndarray, hit: np.ndarray):

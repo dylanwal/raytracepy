@@ -1,3 +1,5 @@
+from typing import Dict
+
 number_type = "float64"
 
 
@@ -26,13 +28,56 @@ def get_object_uid() -> int:
     return object_counter
 
 
-def default_plot_layout(fig):
-    fig.update_layout(autosize=False, width=900, height=790, showlegend=False,
-                      font=dict(family="Arial", size=18, color="black"), plot_bgcolor="white")
-    fig.update_xaxes(title="<b>X<b>", tickprefix="<b>", ticksuffix="</b>", showline=True, linewidth=0, mirror=True,
-                     linecolor='black', showgrid=False, gridwidth=1, gridcolor='lightgray')
-    fig.update_yaxes(title="<b>Y<b>", tickprefix="<b>", ticksuffix="</b>", showline=True, mirror=True, linewidth=0,
-                     linecolor='black', showgrid=False, gridwidth=1, gridcolor='lightgray')
+def default_plot_layout(fig,
+                        layout_kwargs: Dict = None,
+                        xaxis_kwargs: Dict = None,
+                        yaxis_kwargs: Dict = None):
+    layout = {
+        "autosize": False,
+        "width": 900,
+        "height": 790,
+        "showlegend": False,
+        "font": dict(family="Arial", size=18, color="black"),
+        "plot_bgcolor": "white"
+    }
+    xaxis = {
+        "title": "<b>X<b>",
+        "tickprefix": "<b>",
+        "ticksuffix": "</b>",
+        "showline": True,
+        "linewidth": 5,
+        "mirror": True,
+        "linecolor": 'black',
+        "ticks": "outside",
+        "tickwidth": 4,
+        "showgrid": False,
+        "gridwidth": 1,
+        "gridcolor": 'lightgray'
+    }
+    yaxis = {
+        "title": "<b>Y<b>",
+        "tickprefix": "<b>",
+        "ticksuffix": "</b>",
+        "showline": True,
+        "linewidth": 5,
+        "mirror": True,
+        "linecolor": 'black',
+        "ticks": "outside",
+        "tickwidth": 4,
+        "showgrid": False,
+        "gridwidth": 1,
+        "gridcolor": 'lightgray'
+    }
+    if layout_kwargs:
+        layout = layout | layout_kwargs
+    if xaxis_kwargs:
+        xaxis = xaxis | xaxis_kwargs
+    if yaxis_kwargs:
+        yaxis = yaxis | yaxis_kwargs
+
+    fig.update_layout(layout)
+    fig.update_xaxes(xaxis)
+    fig.update_yaxes(yaxis)
     fig.write_html('temp.html', auto_open=True)  # fig.show()
 
 

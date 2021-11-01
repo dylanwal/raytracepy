@@ -1,4 +1,4 @@
-
+from typing import Tuple
 
 import numpy as np
 import plotly.graph_objs as go
@@ -6,7 +6,7 @@ import plotly.graph_objs as go
 from . import get_object_uid, default_plot_layout, number_type
 from .core_functions import normalise
 from .ref_data.light_lens_mirror_funcs import plane_func_factory
-
+from .utils.sig_figs import sig_figs
 
 class Plane:
 
@@ -19,7 +19,8 @@ class Plane:
                  trans_type: str = "absorb",
                  transmit_func: str = "ground_glass_transmit",
                  scatter_func: str = "ground_glass_diffuser",
-                 reflect_func: str = "mirror95"):
+                 reflect_func: str = "mirror95",
+                 bins: Tuple = (20, 20)):
         """
         This class is used to define ground planes, diffraction planes and mirrors.
 
@@ -64,14 +65,26 @@ class Plane:
 
         # data
         self.hits = None
+        self.bins = bins
+        self.hist = None
 
         # # Plane ref_data is grouped in this way for efficiency with numba
         # self.grouped_data = None
         # self.create_grouped_data()
 
     def __str__(self):
-        return f"Plane|| id: {self.uid}; type: { self.transmit_type}; dim: {self.width} x {self.length}; pos:" \
-               f" {self.position}"
+        return f"Plane {self.uid}|| pos: {self.position}; norm: {self.normal}"
+
+    def __repr__(self):
+        return self.print_stats()
+
+    def print_stats(self) -> str:
+        text = "\n"
+        text += f"Plane: {self.name} (uid: {self.uid})"
+        text += f"\n\t pos: {self.position}, norm: {self.normal}"
+        text += f"\n\t length: {self.length}, width: {self.width}"
+        text += f"\n\t hits: {len(self.hits)}"
+        return text
 
     def _calc_corner(self):
         if self.normal[0] == 0 and self.normal[1] == 0:
@@ -117,22 +130,102 @@ class Plane:
     #     for corner in self.corners:
     #         self.grouped_data = np.append(self.grouped_data, corner)
 
-    def plot_heat_map(self):
-        # kwargs = {"z": grid}
-        #
-        # if z_range is not None:
-        #     kwargs["zmin"] = z_range[0]
-        #     kwargs["zmax"] = z_range[1]
-        # if xy_range is not None:
-        #     dx = (16 - 4.5) / 10
-        #     dy = (25 - 8) / 10
-        #     width = 600
-        #     height = 600
-        # else:
-        #     width = 600
-        #     height = 600
+    def create_histogram(self, **kwargs):
+        kkwargs = {
+            "bins": self.bins,
+        }
 
-        heat_map = go.Histogram2d(x=self.hits[:, 0], y=self.hits[:, 1])
+        kkwargs = kkwargs | kwargs
+        hist, xedges, yedges = np.histogram2d(x=self.hits[:, 0], y=self.hits[:, 1], **kkwargs)
+        if self.hist is None:
+            self.hist = hist
+        return hist, xedges, yedges
+
+    def hit_stats(self, normalized=False):
+        if self.hist is None:
+            self.create_histogram()
+
+        headers = ["min", "1", "5", "10", "mean", "90", "95", "99", "max"]
+        his_array = np.reshape(self.hist, (self.hist.shape[0] * self.hist.shape[1],))
+        mean_ = float(np.mean(his_array))
+        if normalized:
+            data = [sig_figs(np.min(his_array)/mean_),
+                    sig_figs(np.percentile(his_array, 1)/mean_),
+                    sig_figs(np.percentile(his_array, 5)/mean_),
+                    sig_figs(np.percentile(his_array, 10)/mean_),
+                    sig_figs(mean_/mean_),
+                    sig_figs(np.percentile(his_array, 90)/mean_),
+                    sig_figs(np.percentile(his_array, 95)/mean_),
+                    sig_figs(np.percentile(his_array, 99)/mean_),
+                    sig_figs(np.max(his_array)/mean_)]
+        else:
+            data = [sig_figs(np.min(his_array)),
+                    sig_figs(np.percentile(his_array, 1)),
+                    sig_figs(np.percentile(his_array, 5)),
+                    sig_figs(np.percentile(his_array, 10)),
+                    sig_figs(mean_),
+                    sig_figs(np.percentile(his_array, 90)),
+                    sig_figs(np.percentile(his_array, 95)),
+                    sig_figs(np.percentile(his_array, 99)),
+                    sig_figs(np.max(his_array))]
+
+        return [headers, data]
+
+    def print_hit_stats(self, normalized=False):
+        data = self.hit_stats(normalized)
+        s = [[str(e) for e in row] for row in data]
+        lens = [max(map(len, col)) for col in zip(*s)]
+        fmt = '\t'.join('{{:{}}}'.format(x) for x in lens)
+        table = [fmt.format(*row) for row in s]
+        print("")
+        print(f"Plane ({self.uid}) hit stats (norm: {normalized})")
+        print('\n'.join(table))
+
+    def plot_heat_map(self, **kwargs):
+        kkwargs = {
+            # "nbinsx": self.bins[0],
+            # "nbinsy": self.bins[1]
+        }
+
+        kkwargs = kkwargs | kwargs
+        heat_map = go.Histogram2d(x=self.hits[:, 0], y=self.hits[:, 1], **kkwargs)
         fig = go.Figure(heat_map)
-        default_plot_layout(fig)
+        layout_kwargs = {"width": 1200}
+        default_plot_layout(fig, layout_kwargs)
         return fig
+
+    def plot_sensor(self, xy: np.ndarray, r: float, normalize: bool = False, **kwargs):
+        z = self.shape_grid(xy, r)
+        kkwargs = {
+            "marker": dict(showscale=True, size=25, colorbar=dict(title="<b>counts</b>"))
+        }
+
+        if normalize:
+            kkwargs["marker"] = dict(showscale=True, size=25, colorbar=dict(title="<b>normalized<br>irradiance</b>"))
+            z = z/np.max(z)
+
+        kkwargs = kkwargs | kwargs
+        scatter = go.Scatter(x=xy[:, 0], y=xy[:, 1], mode='markers', marker_color=z, **kkwargs)
+        fig = go.Figure(scatter)
+        layout_kwargs = {"width": 800 * (np.max(xy[:, 0])-np.min(xy[:, 0])) / (np.max(xy[:, 1])-np.min(xy[:, 1])) + 150}
+        default_plot_layout(fig, layout_kwargs)
+        return fig
+
+    def shape_grid(self, xy: np.ndarray, r: float = 1) -> np.ndarray:
+        out = np.empty(xy.shape[0])
+        for i, point in enumerate(xy):
+            out[i] = self.hits_in_circle(point, r)
+
+        return out
+
+    def hits_in_circle(self, point, r) -> int:
+        """
+        Counts how many hits are within r of point.
+        :param point [x,y,z]
+        :param r radius
+        :return number of hits in circle
+        """
+        dis = np.linalg.norm(point-self.hits[:, 0:2], axis=1)
+        return int(np.sum(dis <= r, axis=0))
+
+

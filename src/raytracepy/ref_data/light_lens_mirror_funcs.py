@@ -20,7 +20,7 @@ class CDFFuncs:
         self.x_cdf = x_cdf
         self.y_cdf = y_cdf
 
-    def __call__(self, n: int):
+    def __call__(self, n: int = 1):
         """
         :param n: number of random numbers you want
         :return

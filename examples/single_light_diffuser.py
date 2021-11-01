@@ -28,24 +28,23 @@ def main():
     light = rpy.Light(
         position=np.array([0, 0, 5], dtype='float64'),
         direction=np.array([0, 0, -1], dtype='float64'),
-        emit_light_fun_id=1
     )
 
     # Create ref_data class
-    data = rpy.RayTraceData(
+    sim = rpy.RayTrace(
         planes=planes,
         lights=light,
-        num_rays=3_000_000
+        total_num_rays=50_000
     )
-
-    # pass setup/ref_data object to the simulation; then run the simulation
-    sim = rpy.RayTrace(data)
     sim.run()
 
-    # 5) Analyze/plot output
-    data.percentile_table()
-    data.percentile_table(normalized=True)
-    data.plot_hist()
+    # Analyze/plot output
+    ground.plot_heat_map()
+    sim.print_stats()
+    ground.print_hit_stats()
+    ground.print_hit_stats(True)
+
+    print("hi")
 
 
 if __name__ == "__main__":

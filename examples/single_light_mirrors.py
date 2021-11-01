@@ -73,14 +73,20 @@ def main():
         bounces=4
     )
 
-    # pass setup/ref_data object to the simulation; then run the simulation
-    sim = rpy.RayTrace(data)
+    # Create sim and run it
+    sim = rpy.RayTrace(
+        planes=planes,
+        lights=light,
+        total_num_rays=10_000
+    )
     sim.run()
 
     # Analyze/plot output
-    data.percentile_table()
-    data.percentile_table(normalized=True)
-    data.plot_hist()
+    ground.plot_heat_map()
+    sim.print_stats()
+    ground.print_hit_stats()
+    ground.print_hit_stats(True)
+    print("hi")
 
 
 if __name__ == "__main__":
