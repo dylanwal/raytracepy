@@ -11,11 +11,11 @@ import warnings
 import numpy as np
 import plotly.graph_objs as go
 
-from . import number_type, default_plot_layout
+from . import dtype, default_plot_layout
 
 
 class PointPattern(ABC):
-    number_type = number_type
+    number_type = dtype
 
     @property
     @abstractmethod

@@ -1,20 +1,16 @@
-from typing import Protocol, List, Union
+from typing import List, Union
 import pickle
 import datetime
 
 import numpy as np
+import plotly.graph_objs as go
 
-from . import Plane, Light, time_it
-from .core_functions import trace_rays, get_phi, create_ray, trace_rays_lock
-
-
-class GeometryObject(Protocol):
-    uid: str
-    name: str
+from . import dtype, Plane, Light, time_it, default_plot_layout
+import core
 
 
 class BaseList:
-    def __init__(self, objs: Union[List[GeometryObject], GeometryObject]):
+    def __init__(self, objs: Union[List[Plane], Plane, List[Light], Light]):
         if not isinstance(objs, list):
             objs = [objs]
 
@@ -60,15 +56,13 @@ class RayTrace:
                  planes: Union[Plane, List[Plane]],
                  lights: Union[Light, List[Light]],
                  total_num_rays: int = 10_000,
-                 max_bounces: int = 0,
-                 num_traces: int = 100):
+                 bounce_max: int = 0):
         """
 
         :param planes:
         :param lights:
         :param total_num_rays:
-        :param max_bounces:
-        :param num_traces:
+        :param bounce_max:
         """
         self._run: bool = False
         self.planes = BaseList(planes)
@@ -76,16 +70,22 @@ class RayTrace:
 
         self.total_num_rays = total_num_rays
         self._set_rays_per_light()
-        self.max_bounces = max_bounces
-
-        self.traces_per_light = int(num_traces/len(self.lights))
-        self.num_traces = self.traces_per_light * len(self.lights)
+        self.bounce_max = bounce_max
+        self.plane_matrix = None
 
     def __str__(self):
         return f"Simulation || run:{self._run} num_lights: {len(self.lights)}; num_planes: {len(self.planes)}"
 
     def __repr__(self):
         return self.print_stats()
+
+    # @property
+    # def bounce_total(self):
+    #     return np.sum(self.traces[:, 0])
+    #
+    # @property
+    # def bounce_avg(self):
+    #     return np.mean(self.traces[:, 0])
 
     def save_data(self, file_name: str = None):
         """ Save class in pickle format. """
@@ -107,7 +107,7 @@ class RayTrace:
             self.total_num_rays = sum([light.num_rays for light in self.lights])
             return
 
-        rays_per_power = self.total_num_rays/sum([light.power for light in self.lights])
+        rays_per_power = self.total_num_rays / sum([light.power for light in self.lights])
         for light in self.lights:
             light.num_rays = int(light.power * rays_per_power)
 
@@ -123,49 +123,73 @@ class RayTrace:
         return out
 
     @time_it
-    def run(self, multiproc: bool = False):
+    def run(self):
         """ Main Loop: Loop through each light and ray trace. """
-        if multiproc:
-            from multiprocessing import Process, Lock
+        from core_functions import trace_rays
+        for i, light in enumerate(self.lights):
+            ray_direction = self._create_rays(light)
+            trace_rays(light.position, ray_direction, self.planes, self.bounce_max)
 
-            lock = Lock()
-            for i, light in enumerate(self.lights):
-                Process(target=self._raytrace_single_light_lock, args=(lock, light)).start()
-                print(f"Calculations for {i+1}/{len(self.lights)} complete.")
-
-        else:
-            for i, light in enumerate(self.lights):
-                self._raytrace_single_light(light)
-                print(f"Calculations for {i+1}/{len(self.lights)} complete.")
+            print(f"Calculations for {i + 1}/{len(self.lights)} complete.")
 
         self._run = True
 
-    def _raytrace_single_light(self, light: Light):
-        ray_direction = self._create_ray(light)
-        trace_rays(light.position,  ray_direction, self.planes, self.max_bounces)
-
-    def _raytrace_single_light_lock(self, lock,  light: Light):
-        ray_direction = self._create_ray(light)
-        trace_rays_lock(lock, light.position,  ray_direction, self.planes, self.max_bounces)
-
     @staticmethod
-    def _create_ray(light: Light) -> np.ndarray:
-        """
-
-        :param light:
-        :return: direction vector of ray [[x1,y1,z1], [x2,y2,z2]]
-        """
+    def _create_rays(light: Light) -> np.ndarray:
+        """ Create the rays for a single light. """
         theta = light.theta_func(light.num_rays)
-        phi = get_phi(light.phi_rad, light.num_rays)
+        phi = core.get_phi(light.phi_rad, light.num_rays)
+        rays_dir = core.spherical_to_cartesian(theta, phi)
+        rays_dir = core.rotate_vec(rays_dir, light.direction)
+        return rays_dir
 
-        return create_ray(theta, phi, light.direction)
+    @time_it
+    def run2(self):
+        """ Main Loop: Loop through each light and ray trace. """
+        self._generate_plane_matrix()
+
+        for i, light in enumerate(self.lights):
+            light.traces = np.empty((light.num_traces, 1 + 3 + 3 + 3 * self.bounce_max), dtype=dtype)
+            # (bounce counter + xyz_bounce[start]+ xyz_bounce[end] + xyz_max, num_traces)
+
+            rays_dir = self._create_rays(light)
+            rays_dir = np.append(rays_dir, np.zeros(light.num_rays).reshape((light.num_rays, 1)), axis=1)
+            # last zero row is for plane id, as rays_dir gets turned into hits matrix
+            hits, light.traces = core.trace_rays(light.position,
+                                                 rays_dir,
+                                                 self.plane_matrix,
+                                                 self.bounce_max,
+                                                 light.traces)
+            self._unpack_hits(hits)
+
+            print(f"Calculations for {i + 1}/{len(self.lights)} complete.")
+
+        self._run = True
+
+    def _generate_plane_matrix(self):
+        """ Create matrix of plane data for efficient use in numba. """
+        self.plane_matrix = np.empty((len(self.planes), 15))
+        for i, plane in enumerate(self.planes):
+            self.plane_matrix[i] = plane.generate_plane_array()
+
+    def _unpack_hits(self, hits: np.ndarray):
+        """ Unpack hit matrix from ray trace by placing hits by assigning hits to correct plane """
+
+        for plane in self.planes:
+
+            index_ = np.where(hits[:, 0] == plane.uid)
+            if plane.hits is None:
+                plane.hits = hits[index_][:, 1:]
+            else:
+                plane.hits = np.vstack((plane.hits, hits[index_][:, 1:]))
 
     def stats(self):
+        """ Prints stats about simulation. """
         text = "\n"
         text += f"Ray Trace Simulation Results (run: {self._run})"
         text += "\n--------------------------------"
         text += f"\nrays generated: {self.total_num_rays}"
-        text += f"\nmax bounces: {self.max_bounces}"
+        text += f"\nmax bounces: {self.bounce_max}"
         text += f"\nnumber of lights: {len(self.lights)}"
         text += f"\nnumber of planes: {len(self.planes)}"
         for light in self.lights:
@@ -178,103 +202,119 @@ class RayTrace:
     def print_stats(self):
         print(self.stats())
 
-    # # unpack ref_data for planes of interest and save
-    # for plane, index in zip(data.planes, data_plane_indexing):
-    #     # get the final hits for specific plane
-    #     hits = out[out[:, 0] == index, 1:]  # [x, y, z] for every hit
-    #     # create histogram
-    #     data.histogram(plane, hits)
-    #
-    #     # Plane ref_data is grouped in this way for efficiency with numba
-    #     if type(planes) != list:
-    #         grouped_plane_data = planes.grouped_data
-    #     elif type(planes) == list:
-    #         grouped_plane_data = np.vstack([plane.grouped_data for plane in planes])
-    #     else:
-    #         exit("TypeError in planes entry to main simulation loop.")
-    #
+    def plot_traces(self, **kwargs):
+        """ Create 3d plot of light ray traces. """
+        kkwargs = {}
+        if kwargs:
+            kkwargs = kkwargs | kwargs
 
-    # def plot_traces(self):
-    #     plotting.plot_traces(self.planes, self.lights, self.traces)
+        fig = go.Figure()
+        self._add_planes(fig)
+        self._add_lights_3D(fig)
+        # self._add_ray_traces(fig)
 
-    # def plotting_light_positions(positions):
-    #     """
-    #     Takes x,y and generates a simple plot of light locations.
-    #     :param positions:
-    #     :return: plot
-    #     """
-    #     x, y = np.split(positions, 2, axis=1)
-    #     plt.plot(x, y, 'ko')
-    #     plt.show()
+        # default_plot_layout(fig)
+        fig.write_html('temp.html', auto_open=True)
+        return fig
+
+    # def _get_one_trace(self, n: int = 0) -> np.ndarray:
+    #     """"""
+    #     trace = self.traces[n]
+    #     x = trace[1::3]  # get every 3rd one
+    #     y = trace[2::3]
+    #     z = trace[3::3]
     #
-    # def plotting_lens_angles(x, y):
-    #     """
-    #     Takes x,y and generates a simple plot
-    #     :param x:
-    #     :param y:
-    #     :return:
-    #     """
-    #     plt.plot(x, y, 'k-')
-    #     plt.show()
+    #     return np.column_stack((x, y, z))
+
+    # def _add_ray_traces(self, fig, **kwargs):
+    #     """ Add traces of rays to 3d plot. """
+    #     kkwargs = {
+    #         "connectgaps": True,
+    #         "line": dict(color='rgb(100,100,100)', width=2)
+    #     }
+    #     if kwargs:
+    #         kkwargs = kkwargs | kwargs
     #
-    # def plane_corner_xyz(plane):
-    #     if plane.normal[2] != 0:
-    #         d = - np.dot(plane.position, plane.normal)
-    #         xx, yy = np.meshgrid([plane.corners[0], plane.corners[1]], [plane.corners[2], plane.corners[3]])
-    #         zz = (-plane.normal[0] * xx - plane.normal[1] * yy - d) * 1. / plane.normal[2]
-    #     else:
-    #         if plane.normal[0] == 0:
-    #             xx = np.array([[plane.corners[0], plane.corners[0]], [plane.corners[1], plane.corners[1]]])
-    #             yy = np.array([[plane.corners[2], plane.corners[3]], [plane.corners[2], plane.corners[3]]])
-    #             zz = np.array([[plane.corners[4], plane.corners[5]], [plane.corners[4], plane.corners[5]]])
-    #         if plane.normal[1] == 0:
-    #             xx = np.array([[plane.corners[0], plane.corners[0]], [plane.corners[1], plane.corners[1]]])
-    #             yy = np.array([[plane.corners[2], plane.corners[3]], [plane.corners[2], plane.corners[3]]])
-    #             zz = np.array([[plane.corners[4], plane.corners[4]], [plane.corners[5], plane.corners[5]]])
-    #
-    #     return xx, yy, zz
-    #
-    # def plot_traces(planes: list, lights: list, traces: list):
-    #     ax = plt.axes(projection='3d')
-    #
-    #     # Planes
-    #     for plane in planes:
-    #         alpha = 0.6
-    #         color = (0.5, 0.5, 0.5)
-    #         if plane.trans_type == 0:
-    #             alpha = 1
-    #             color = (0, 0, 1)
-    #         elif plane.trans_type == 1:
-    #             alpha = 0.2
-    #             color = (0, 0, 0)
-    #
-    #         xx, yy, zz = plane_corner_xyz(plane)
-    #         ax.plot_surface(xx, yy, zz, color=color, alpha=alpha)
-    #
-    #     # Lights
-    #     for light in lights:
-    #         ax.scatter3D(light.position[0], light.position[1], light.position[2], s=40, color=(0, 0.8, 0.8))
-    #         ax.quiver(light.position[0], light.position[1], light.position[2],
-    #                   light.direction[0], light.direction[1], light.direction[2],
-    #                   length=4, color=(0.1, 0.2, 0.5))
-    #
-    #     # Traces
-    #     if not traces == []:
-    #         for trace in traces:
-    #             x = trace[:, 0]
-    #             y = trace[:, 1]
-    #             z = trace[:, 2]
-    #             ax.plot(x, y, z)
-    #             ax.scatter3D(x[-1], y[-1], z[-1], color=(1, 0, 0), alpha=1, s=4)
-    #
-    #     # ax.set_xlim3d(-10, 1)
-    #     # ax.set_ylim3d(-1, 1)
-    #     # ax.set_zlim3d(-1, 1)
-    #     plt.show()
-    #
-    # def plot_hist(his, plane):
-    #     plt.imshow(his, origin='lower', aspect='auto', extent=plane.range)
-    #     cb = plt.colorbar()
-    #     cb.set_label("density")
-    #     plt.clim(0, np.percentile(np.reshape(his, (his.shape[0] * his.shape[1],)), 95))
-    #     plt.show()
+    #     for i in range(len(self.traces)):
+    #         xyz = self._get_one_trace(i)
+    #         line = go.Scatter3d(x=xyz[:, 0], y=xyz[:, 1], z=xyz[:, 2], mode='lines', **kkwargs)
+    #         fig.add_trace(line)
+
+    def _add_planes(self, fig, **kwargs):
+        """ Add planes to 3d plot. """
+        kkwargs = {
+            "showscale": False,
+            # "surfacecolor": [-1, -1, -1],
+            "colorscale": 'Gray'
+        }
+        if kwargs:
+            kkwargs = kkwargs | kwargs
+
+        for plane in self.planes:
+            #         alpha = 0.6
+            #         color = (0.5, 0.5, 0.5)
+            #         if plane.trans_type == 0:
+            #             alpha = 1
+            #             color = (0, 0, 1)
+            #         elif plane.trans_type == 1:
+            #             alpha = 0.2
+            #             color = (0, 0, 0)
+            x, y, z = plane.plane_corner_xyz()
+            surf = go.Surface(x=x, y=y, z=z, name=plane.name, **kkwargs)
+            fig.add_trace(surf)
+
+    def _add_lights_3D(self, fig, **kwargs):
+        """ Add lights to 3d plot. """
+        kkwargs = {
+            "opacity": 0.3,
+            "showscale": False,
+            "anchor": "tip",
+            "sizeref": 1,
+            "colorscale": "Hot"
+        }
+        if kwargs:
+            kkwargs = kkwargs | kwargs
+
+        for light in self.lights:
+            cone = go.Cone(
+                x=[float(light.position[0])],
+                y=[float(light.position[1])],
+                z=[float(light.position[2])],
+                u=[float(light.direction[0])],
+                v=[float(light.direction[1])],
+                w=[float(light.direction[2])],
+                name=light.name, **kkwargs)
+            fig.add_trace(cone)
+
+    def _add_lights_2D(self, fig, **kwargs):
+        """ Add lights to 2d plot. """
+        kkwargs = {
+            "marker": dict(color='rgb(0,0,0)', size=10, symbol="x")
+        }
+        if kwargs:
+            kkwargs = kkwargs | kwargs
+
+        x = np.empty(len(self.lights))
+        y = np.empty_like(x)
+        for i, light in enumerate(self.lights):
+            x[i] = light.position[0]
+            y[i] = light.position[1]
+
+        points = go.Scatter(x=x, y=y, mode='markers', **kkwargs)
+        fig.add_trace(points)
+
+    def plot_light_positions(self, mode: str = "2d"):
+        """
+        :param mode:
+        :return: plot
+        """
+        fig = go.Figure()
+        if mode == "2d":
+            self._add_lights_2D(fig)
+        elif mode == "3d":
+            self._add_lights_3D(fig)
+        else:
+            raise ValueError("'2d' or '3d' only for mode.")
+
+        default_plot_layout(fig)
+        return fig

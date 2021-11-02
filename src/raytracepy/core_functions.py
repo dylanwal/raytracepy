@@ -123,8 +123,14 @@ def rotate_vec(rays: np.ndarray,
 
     angle_of_rotate = np.arccos(np.dot(prim_dir, direction))
     q = quaternion_from_axis_angle(axis_of_rotate, angle_of_rotate)
+    q_mat = q_matrix(q)
+    q_con = q_conjugate(q)
 
-    return rotate_quaternion(q, rays)
+    rays = np.append(np.zeros(rays.shape[0]).reshape((rays.shape[0], 1)), rays, axis=1)
+    for i in range(rays.shape[0]):
+        rays[i, :] = rotate_quaternion(rays[i, :], q_mat, q_con)
+
+    return np.delete(rays, 0, 1)
 
 
 @njit
@@ -144,23 +150,19 @@ def quaternion_from_axis_angle(axis: np.ndarray, angle: np.ndarray) -> np.ndarra
 
 
 @njit("f8[:](f8[:],f8[:])")
-def rotate_quaternion(q: np.ndarray, rays: np.ndarray):
+def rotate_quaternion(q_ray: np.ndarray, q_mat: np.ndarray, q_con: np.ndarray) -> np.ndarray:
     """
     Rotate a quaternion vector using the stored rotation.
     :param q: quaternion form (0 + xi + yj + kz)
     :param rays: The vector to be rotated, in
     :return rotated vectors
     """
-    q_ray = np.append(np.zeros(rays.shape[0]).reshape(rays.shape[0], 1), rays, axis=1)
-    q1 = np.dot(q_matrix(q), q_ray)
+    q1 = np.dot(q_mat, q_ray)
     q2 = q_matrix(q1)
-    q3 = q_conjugate(q)
-    q_rotated = np.dot(q2, q3)
-
-    return q_rotated[1:, :]
+    return np.dot(q2, q_con)
 
 
-@njit
+@njit("f8[:](f8[:])")
 def q_conjugate(q):
     """w, x, y, z = q  ->   [w, -x, -y, -z]"""
     return q*np.array([1, -1, -1, -1])

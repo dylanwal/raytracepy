@@ -1,6 +1,6 @@
 from typing import Dict
 
-number_type = "float64"
+dtype = "float64"
 
 
 from functools import wraps

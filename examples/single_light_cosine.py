@@ -26,7 +26,7 @@ def single_run(x: float, z: float):
     sim = rpy.RayTrace(
         planes=ground,
         lights=light,
-        total_num_rays=10_000
+        total_num_rays=50_000
     )
     sim.run()
 
@@ -39,13 +39,14 @@ def main():
     x = np.linspace(0, 5, n)
     z = np.sqrt(25-x**2)
     a = np.pi/2 - np.arctan(z/x)
-    data = np.empty((4, n))
+    data = np.empty((n, 4))
     for i in range(n):
-        data[i][0] = x[i]
-        data[i][1] = z[i]
-        data[i][2] = a[i]
-        data[i][3] = single_run(x[i], z[i])
-        print(f"{i}: {data[i]}")
+        data[i, 0] = x[i]
+        data[i, 1] = z[i]
+        data[i, 2] = a[i]
+        data[i, 3] = single_run(x[i], z[i])
+
+    print(data)
 
 
 if __name__ == "__main__":
