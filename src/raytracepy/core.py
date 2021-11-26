@@ -10,12 +10,30 @@ Notes:
 """
 
 import numpy as np
-from numba import njit, config
+from numba import njit
 
 from . import dtype
-from ref_data.numba_funcs import plane_func_selector
+from .ref_data.numba_funcs import numba_func_selector
 
-config.DISABLE_JIT = True
+
+@njit  # ("f8[::](f8,f8[:],f8[:],i4)")
+def create_rays(theta_func_id, direction,
+                phi: np.ndarray = np.array([0, 2 * np.pi], dtype=dtype),
+                num_rays: int = 1) -> np.ndarray:
+    """
+    Create the direction vectors for rays.
+
+    :param theta_func_id:
+    :param direction:
+    :param phi:
+    :param num_rays:
+    :return num_rays by 3 matrix [x,y,z] direction vector
+     """
+    theta = numba_func_selector(theta_func_id, n=num_rays)
+    phi = get_phi(phi, num_rays)
+    rays_dir = spherical_to_cartesian(theta, phi)
+    rays_dir = rotate_vec(rays_dir, direction)
+    return rays_dir
 
 
 @njit
@@ -30,66 +48,58 @@ def trace_rays(ray_pos: np.ndarray, ray_dir: np.ndarray, plane_matrix: np.ndarra
     :param traces:
     :return:
     """
+    traces_counter = 0
     for i in range(ray_dir.shape[0]):  # Loop through each ray until it reaches max bounces or absorbs into surface.
-        ray = ray_dir[i, :]
-        ray_position_now = ray_pos
-        bounces_count = 0
-        skip_plane = -1
-        for _ in range(bounce_max + 1):
-            bounces_count += 1
-
-            # calculate plane intersections
-            for plane in plane_matrix:
-                if plane[-1] != skip_plane:
+        ray = ray_dir[i, :-1]
+        plane_hit = -1
+        traces[traces_counter, :3] = ray_pos
+        for bounce in range(bounce_max + 1):
+            for plane in plane_matrix:  # calculate plane intersections
+                if plane[-1] != plane_hit:
                     # check to see if ray will hit infinite plane
-                    intersect_cord = plane_ray_intersection(rays_dir=ray[:-1],
-                                                            rays_pos=ray_position_now,
-                                                            plane_dir=plane[7:10],
-                                                            plane_pos=plane[4:7])
-                    if intersect_cord is not None:
-                        # check to see if the hit is within the bounds of the plane
-                        if check_in_plane_range(point=intersect_cord, plane_corners=plane[10:]):
-                            skip_plane = plane[-1]
-                            ray_dir[i, -1] = plane[-1]
-                            ray_dir[i, :-1] = intersect_cord
-                            break
+                    intersect_cord = plane_ray_intersection(rays_dir=ray,
+                                                            rays_pos=traces[traces_counter, bounce*3: 3+bounce*3],
+                                                            plane_dir=plane[7:10], plane_pos=plane[4:7])
+                    # check to see if the hit is within the bounds of the plane
+                    if intersect_cord is not None and check_in_plane_range(point=intersect_cord,
+                                                                           plane_corners=plane[10:]):
+                        plane_hit = plane[-1]
+                        traces[traces_counter, 3+bounce*3: 6+bounce*3] = intersect_cord
+                        traces[traces_counter, -1] = bounce
+                        break
+            else:
+                break  # does not hit any planes
 
-            if bounces_count <= bounce_max:  # skip if no bounces left
-                # calculate angle light hit plane
-                angle = np.arcsin(np.dot(ray[:-1], plane[7:10]))
-                # transmitted light
-                if 0 < plane[0] <= 2:
+            if bounce < bounce_max:  # skip if no bounces left
+                angle = np.arcsin(np.dot(ray, plane[7:10]))  # calculate angle light hit plane
+
+                if 0 < plane[0] <= 2:  # if plane type allows transmitted light
                     # calculate probably of light transmitting given the angle.
-                    prob = plane_func_selector(plane[1], np.array([angle], dtype=dtype))
+                    prob = numba_func_selector(plane[1], np.array([angle], dtype=dtype))
                     if np.random.random() < prob:
-                        # if transmitted, calculate diffraction ray and continue tracing the ray
-                        ray[:-1] = create_ray(theta_fun_id=plane[2], direction=ray[:-1])
-                        #ray[:-1] = np.reshape(ray[:-1], 3)
-                        ray_position_now = intersect_cord
-                        continue
+                        # if transmitted, calculate diffraction ray new direction
+                        ray = create_rays(plane[2], direction=ray).reshape(3)
+                        continue  # continue tracing the ray
 
-                # reflected light
-                if plane[0] >= 2:
-                    # calculate probably of light transmitting given the angle.
-                    prob = plane_func_selector(plane[3], np.array([angle], dtype=dtype))
+                if plane[0] >= 2:  # reflected light
+                    # calculate probably of light reflecting given the angle.
+                    prob = numba_func_selector(plane[3], np.array([angle], dtype=dtype))
                     if np.random.random() < prob:
-                        # if reflected, calculate reflection ray and continue tracing the ray
-                        ray[:-1] = normalise(refection_vector(ray[:-1], plane[7:10]))
-                        ray_position_now = intersect_cord
-                        continue
+                        # if reflected, calculate reflection ray
+                        ray = normalise(refection_vector(ray, plane[7:10]))
+                        continue  # continue tracing the ray
 
-            # absorbed
-            break
+            break  # absorbed ray (mirror or diffuser)
+
+        # record final location of ray
+        ray_dir[i, -1] = plane_hit
+        ray_dir[i, :-1] = traces[traces_counter, 3+bounce*3: 6+bounce*3]
+
+        if traces[traces_counter, -1] != -1:  # if the trace doesn't hit anything, continue with same data row
+            if traces_counter < traces.shape[0]-1:
+                traces_counter += 1
 
     return ray_dir, traces
-
-
-@njit
-def create_ray(theta_func_id, direction):
-    phi = np.array([0, 359.999], dtype=dtype)
-    theta = plane_func_selector(theta_func_id)
-    rays_dir = spherical_to_cartesian(theta, phi)
-    return rotate_vec(rays_dir, direction)
 
 
 @njit
@@ -123,7 +133,7 @@ def check_in_plane_range(point, plane_corners):
 
 @njit
 def rotate_vec(rays, direction):
-    prim_dir = np.array([0.00010000999999979996, 0.00010000999999979996, 0.9999999899979999], dtype='float64')
+    prim_dir = np.array([0.0000000000000016, 0.000000000000296, 0.99999999999988], dtype='float64')
     axis_of_rotate = np.cross(prim_dir, direction)
     angle_of_rotate = np.arccos(np.dot(prim_dir, direction))
     q_vector = into_quaternion_from_axis_angle(axis=axis_of_rotate, angle=angle_of_rotate)
@@ -214,18 +224,19 @@ def plane_ray_intersection(rays_dir: np.ndarray, rays_pos: np.ndarray, plane_dir
     return intersection
 
 
-@njit
-def get_phi(phi_rad: np.ndarray = np.array([0, 359.999], dtype=dtype), num_rays: int = 1) -> np.ndarray:
+@njit  # ("f8[:](f8[:],i4)")
+def get_phi(phi_rad: np.ndarray = np.array([0, 2 * np.pi], dtype=dtype),
+            num_rays: int = 1) -> np.ndarray:
     """generate rays angles in spherical coordinates"""
-    return (phi_rad[1] - phi_rad[0]) * np.random.random_sample(num_rays) + phi_rad[0]
+    return (phi_rad[1] - phi_rad[0]) * np.random.random(num_rays) + phi_rad[0]
 
 
 @njit
 def spherical_to_cartesian(theta, phi, r=1):
     """
     Converts spherical coordinates (theta, phi, r) into cartesian coordinates [x, y, z]
-    :param theta
-    :param phi
+    :param theta (radian)
+    :param phi (radian)
     :param r
     :return np.array([x,y,z])
     """
@@ -243,7 +254,7 @@ def spherical_to_cartesian(theta, phi, r=1):
     return mat
 
 
-@njit
+@njit  # ("f8[:](f8[:])")
 def normalise(vector: np.ndarray) -> np.ndarray:
     """
     Object is guaranteed to be a unit quaternion after calling this

@@ -13,38 +13,37 @@ def single_run(height: float):
         name="ground",
         position=np.array([0, 0, 0], dtype='float64'),
         normal=np.array([0, 0, 1], dtype='float64'),
-        length=10,
-        width=10)
+        length=20,
+        width=20)
 
     # define lights
     light = rpy.Light(
         position=np.array([0, 0, height], dtype='float64'),
         direction=np.array([0, 0, -1], dtype='float64'),
-        emit_light_fun_id=1
+        theta_func=0
     )
 
     # Create ref_data class
-    data = rpy.RayTraceData(
+    sim = rpy.RayTrace(
         planes=ground,
-        lights=light
+        lights=light,
+        total_num_rays=3_000_000
     )
 
     # pass setup/ref_data object to the simulation; then run the simulation
-    sim = rpy.RayTrace(data)
     sim.run()
+    # ground.print_hit_stats()
 
     # Analyze/plot output
-    return data.plane["ground"].intensity
+    return sim
 
 
 def main():
     n = 10
-    height = np.linspace(0.2, 10, n)
-    data = np.empty((2, n))
-    for i in range(n):
-        data[i][0] = height
-        data[i][1] = single_run(height[i])
-        print(f"{i}: {data[i]}")
+    height = np.linspace(1, 10, n)
+    for i in range(len(height)):
+        sim = single_run(height[i])
+        sim.save_data(r"C:\Users\nicep\Desktop\Reseach_Post\Case_studies\raytracepy\examples\inverse")
 
 
 if __name__ == "__main__":

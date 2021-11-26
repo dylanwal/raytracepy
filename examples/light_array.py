@@ -13,7 +13,9 @@ def main():
         position=np.array([0, 0, 0], dtype='float64'),
         normal=np.array([0, 0, 1], dtype='float64'),
         length=20,
-        width=20)
+        width=20,
+        bins=(200, 200)
+    )
 
     # define lights
     grid = rpy.OffsetGridPattern(
@@ -22,7 +24,7 @@ def main():
         y_length=12.5,
         num_points=50)
 
-    height = 10
+    height = 2
     lights = []
     for xy_pos in grid.xy_points:
         lights.append(
@@ -35,11 +37,12 @@ def main():
     sim = rpy.RayTrace(
         planes=ground,
         lights=lights,
-        total_num_rays=1_500_000
+        total_num_rays=5_000_000
     )
     sim.run()
 
     # Analyze/plot output
+    ground.create_histogram({"range": [[-5, 5], [-5, 5]]})
     sim.save_data()
     ground.plot_heat_map()
     # sim.print_stats()

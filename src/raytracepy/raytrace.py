@@ -6,7 +6,7 @@ import numpy as np
 import plotly.graph_objs as go
 
 from . import dtype, Plane, Light, time_it, default_plot_layout
-import core
+import raytracepy.core as core
 
 
 class BaseList:
@@ -26,15 +26,12 @@ class BaseList:
         """
 
         :param item:
-            int: uid
+            int:
             string: name of object
         :return:
         """
         if isinstance(item, int):
-            obj = [obj for obj in self._objs if obj.uid == item]
-            if len(obj) != 1:
-                raise ValueError("Item not found.")
-            return obj[0]
+            return self._objs[item]
         elif isinstance(item, str):
             obj = [obj for obj in self._objs if obj.name == item]
             if len(obj) != 1:
@@ -87,11 +84,13 @@ class RayTrace:
     # def bounce_avg(self):
     #     return np.mean(self.traces[:, 0])
 
-    def save_data(self, file_name: str = None):
+    def save_data(self, _dir: str = None, file_name: str = "data"):
         """ Save class in pickle format. """
-        if file_name is None:
-            _date = datetime.datetime.now().strftime("%Y_%m_%d-%I_%M_%S_%p")
-            file_name = f"data_{_date}"
+        _date = datetime.datetime.now().strftime("%Y_%m_%d-%I_%M_%S_%p")
+        file_name = f"{file_name}_{_date}"
+        if _dir is not None:
+            file_name = _dir + r"//" + file_name
+
         with open(file_name + '.pickle', 'wb') as file:
             pickle.dump(self, file)
 
@@ -102,7 +101,7 @@ class RayTrace:
             return pickle.load(file)
 
     def _set_rays_per_light(self):
-        """ Give tootal_num_rays; distribute across all light by power."""
+        """ Give total_num_rays; distribute across all light by power."""
         if not self._check_light_power_ray_num():
             self.total_num_rays = sum([light.num_rays for light in self.lights])
             return
@@ -111,8 +110,10 @@ class RayTrace:
         for light in self.lights:
             light.num_rays = int(light.power * rays_per_power)
 
+        self.total_num_rays = sum([light.num_rays for light in self.lights])
+
     def _check_light_power_ray_num(self) -> bool:
-        """ Return True if all lights have power, or false if num_defined individually."""
+        """ Return True if all lights have power attribute, or false if num_defined individually."""
         out = True
         for light in self.lights:
             if light.num_rays is not None and out:
@@ -125,63 +126,50 @@ class RayTrace:
     @time_it
     def run(self):
         """ Main Loop: Loop through each light and ray trace. """
-        from core_functions import trace_rays
-        for i, light in enumerate(self.lights):
-            ray_direction = self._create_rays(light)
-            trace_rays(light.position, ray_direction, self.planes, self.bounce_max)
-
-            print(f"Calculations for {i + 1}/{len(self.lights)} complete.")
-
-        self._run = True
-
-    @staticmethod
-    def _create_rays(light: Light) -> np.ndarray:
-        """ Create the rays for a single light. """
-        theta = light.theta_func(light.num_rays)
-        phi = core.get_phi(light.phi_rad, light.num_rays)
-        rays_dir = core.spherical_to_cartesian(theta, phi)
-        rays_dir = core.rotate_vec(rays_dir, light.direction)
-        return rays_dir
-
-    @time_it
-    def run2(self):
-        """ Main Loop: Loop through each light and ray trace. """
         self._generate_plane_matrix()
 
         for i, light in enumerate(self.lights):
-            light.traces = np.empty((light.num_traces, 1 + 3 + 3 + 3 * self.bounce_max), dtype=dtype)
-            # (bounce counter + xyz_bounce[start]+ xyz_bounce[end] + xyz_max, num_traces)
+            light.traces = np.ones((light.num_traces + 1, 1 + 3 + 3 + 3 * self.bounce_max), dtype=dtype) * -1
+            # (the +1 will be cut as it may have bad data, xyz_bounce[start]+ xyz_bounce[end] + xyz_max + bounce
+            # counter, num_traces)
 
-            rays_dir = self._create_rays(light)
-            rays_dir = np.append(rays_dir, np.zeros(light.num_rays).reshape((light.num_rays, 1)), axis=1)
-            # last zero row is for plane id, as rays_dir gets turned into hits matrix
-            hits, light.traces = core.trace_rays(light.position,
-                                                 rays_dir,
-                                                 self.plane_matrix,
-                                                 self.bounce_max,
-                                                 light.traces)
+            rays_dir = core.create_rays(light.theta_func, light.direction, light.phi_rad,
+                                        light.num_rays)
+            light.rays = rays_dir
+            rays_dir = np.append(rays_dir, np.ones(light.num_rays).reshape((light.num_rays, 1)) * -1, axis=1)
+            # last row is for plane id, as rays_dir gets turned into hits matrix
+
+            hits, light.traces = core.trace_rays(light.position, rays_dir,
+                                                 self.plane_matrix, self.bounce_max, light.traces)
+
+            light.traces = light.traces[:-1, :]  # the last row could have bad data if it didn't hit a plane
             self._unpack_hits(hits)
-
             print(f"Calculations for {i + 1}/{len(self.lights)} complete.")
 
         self._run = True
 
     def _generate_plane_matrix(self):
         """ Create matrix of plane data for efficient use in numba. """
-        self.plane_matrix = np.empty((len(self.planes), 15))
         for i, plane in enumerate(self.planes):
-            self.plane_matrix[i] = plane.generate_plane_array()
+            if self.plane_matrix is None:
+                self.plane_matrix = plane.generate_plane_array()
+            else:
+                self.plane_matrix = np.vstack((self.plane_matrix, plane.generate_plane_array()))
+
+        if len(self.plane_matrix.shape) == 1:
+            self.plane_matrix = self.plane_matrix.reshape((1, self.plane_matrix.shape[0]))
 
     def _unpack_hits(self, hits: np.ndarray):
-        """ Unpack hit matrix from ray trace by placing hits by assigning hits to correct plane """
-
+        """
+        Unpack hit matrix from ray trace by placing hits by assigning hits to correct plane.
+        Plane_id of -1 is a ray that hit no plane.
+        """
         for plane in self.planes:
-
-            index_ = np.where(hits[:, 0] == plane.uid)
+            index_ = np.where(hits[:, -1] == plane.uid)
             if plane.hits is None:
-                plane.hits = hits[index_][:, 1:]
+                plane.hits = hits[index_][:, :-1]
             else:
-                plane.hits = np.vstack((plane.hits, hits[index_][:, 1:]))
+                plane.hits = np.vstack((plane.hits, hits[index_][:, :-1]))
 
     def stats(self):
         """ Prints stats about simulation. """
@@ -211,34 +199,43 @@ class RayTrace:
         fig = go.Figure()
         self._add_planes(fig)
         self._add_lights_3D(fig)
-        # self._add_ray_traces(fig)
+        self._add_ray_traces(fig)
+        self._add_hits(fig, num=self.lights[0].num_traces)
 
         # default_plot_layout(fig)
         fig.write_html('temp.html', auto_open=True)
         return fig
 
-    # def _get_one_trace(self, n: int = 0) -> np.ndarray:
-    #     """"""
-    #     trace = self.traces[n]
-    #     x = trace[1::3]  # get every 3rd one
-    #     y = trace[2::3]
-    #     z = trace[3::3]
-    #
-    #     return np.column_stack((x, y, z))
+    @staticmethod
+    def _get_trace_plot_data(light: Light) -> np.ndarray:
+        """"""
+        _out = np.empty((light.traces.shape[0]*(light.traces.shape[1]-1), 3))
+        _out[:] = np.NaN
 
-    # def _add_ray_traces(self, fig, **kwargs):
-    #     """ Add traces of rays to 3d plot. """
-    #     kkwargs = {
-    #         "connectgaps": True,
-    #         "line": dict(color='rgb(100,100,100)', width=2)
-    #     }
-    #     if kwargs:
-    #         kkwargs = kkwargs | kwargs
-    #
-    #     for i in range(len(self.traces)):
-    #         xyz = self._get_one_trace(i)
-    #         line = go.Scatter3d(x=xyz[:, 0], y=xyz[:, 1], z=xyz[:, 2], mode='lines', **kkwargs)
-    #         fig.add_trace(line)
+        _fill_level = 0
+        for trace in light.traces:
+            _bounce_count = int(trace[-1]) + 2  # 2 for start and end points
+            _out[_fill_level:_fill_level + _bounce_count, 0] = trace[:-1][0::3]   # x; get every 3rd one, don't want
+            # last point as its the bounce count
+            _out[_fill_level:_fill_level + _bounce_count, 1] = trace[1::3]  # y; get every 3rd one
+            _out[_fill_level:_fill_level + _bounce_count, 2] = trace[2::3]  # z; get every 3rd one
+            _fill_level += _bounce_count + 1  # the plus one is to leave a NaN in between
+
+        return _out
+
+    def _add_ray_traces(self, fig, **kwargs):
+        """ Add traces of rays to 3d plot. """
+        kkwargs = {
+            "connectgaps": False,
+            "line": dict(color='rgb(100,100,100)', width=2)
+        }
+        if kwargs:
+            kkwargs = kkwargs | kwargs
+
+        for light in self.lights:
+            xyz = self._get_trace_plot_data(light)
+            line = go.Scatter3d(x=xyz[:, 0], y=xyz[:, 1], z=xyz[:, 2], mode='lines', **kkwargs)
+            fig.add_trace(line)
 
     def _add_planes(self, fig, **kwargs):
         """ Add planes to 3d plot. """
@@ -263,12 +260,18 @@ class RayTrace:
             surf = go.Surface(x=x, y=y, z=z, name=plane.name, **kkwargs)
             fig.add_trace(surf)
 
+    def _add_hits(self, fig, num: int):
+        """ Add hits on surface for traces. """
+        for plane in self.planes:
+            hits = go.Scatter3d(x=plane.hits[:num, 0], y=plane.hits[:num, 1], z=plane.hits[:num, 2], mode="markers")
+            fig.add_trace(hits)
+
     def _add_lights_3D(self, fig, **kwargs):
         """ Add lights to 3d plot. """
         kkwargs = {
             "opacity": 0.3,
             "showscale": False,
-            "anchor": "tip",
+            "anchor": "tail",
             "sizeref": 1,
             "colorscale": "Hot"
         }
@@ -285,6 +288,7 @@ class RayTrace:
                 w=[float(light.direction[2])],
                 name=light.name, **kkwargs)
             fig.add_trace(cone)
+            light.plot_add_rays(fig)
 
     def _add_lights_2D(self, fig, **kwargs):
         """ Add lights to 2d plot. """
@@ -316,5 +320,27 @@ class RayTrace:
         else:
             raise ValueError("'2d' or '3d' only for mode.")
 
+        default_plot_layout(fig)
+        return fig
+
+    @staticmethod
+    def _plot_rays_cone(rays):
+        fig = go.Figure()
+        kwargs = {
+            "opacity": 1,
+            "showscale": False,
+            "anchor": "tail",
+        }
+
+        for rays in rays:
+            cone = go.Cone(
+                x=[0],
+                y=[0],
+                z=[0],
+                u=[float(rays[0])],
+                v=[float(rays[1])],
+                w=[float(rays[2])],
+                **kwargs)
+            fig.add_trace(cone)
         default_plot_layout(fig)
         return fig

@@ -1,6 +1,10 @@
-from typing import Dict
-
 dtype = "float64"
+
+
+from numba import config
+
+
+config.DISABLE_JIT = False
 
 
 from functools import wraps
@@ -28,10 +32,11 @@ def get_object_uid() -> int:
     return object_counter
 
 
-def default_plot_layout(fig,
-                        layout_kwargs: Dict = None,
-                        xaxis_kwargs: Dict = None,
-                        yaxis_kwargs: Dict = None):
+_figure_counter: int = 0
+
+
+def default_plot_layout(fig, **kwargs):
+    global _figure_counter
     layout = {
         "autosize": False,
         "width": 900,
@@ -68,17 +73,11 @@ def default_plot_layout(fig,
         "gridwidth": 1,
         "gridcolor": 'lightgray'
     }
-    if layout_kwargs:
-        layout = layout | layout_kwargs
-    if xaxis_kwargs:
-        xaxis = xaxis | xaxis_kwargs
-    if yaxis_kwargs:
-        yaxis = yaxis | yaxis_kwargs
-
     fig.update_layout(layout)
     fig.update_xaxes(xaxis)
     fig.update_yaxes(yaxis)
-    fig.write_html('temp.html', auto_open=True)  # fig.show()
+    fig.write_html(f'temp{_figure_counter}.html', auto_open=True)  # fig.show()
+    _figure_counter += 1
 
 
 from .light_layouts import CirclePattern, GridPattern, OffsetGridPattern

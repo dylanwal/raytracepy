@@ -1,12 +1,20 @@
-from typing import Tuple
+from typing import Tuple, List
+from enum import Enum
+import inspect
 
 import numpy as np
 import plotly.graph_objs as go
 
 from . import get_object_uid, default_plot_layout, dtype
-from .ref_data.light_lens_mirror_funcs import plane_func_factory
 from .utils.sig_figs import sig_figs
-import core
+from .core import normalise
+
+
+class TransmissionTypes(Enum):
+    absorb = 0
+    transmit = 1
+    transmit_reflect = 2
+    reflect = 3
 
 
 class Plane:
@@ -18,10 +26,10 @@ class Plane:
                  length: float = 10,
                  width: float = 10,
                  trans_type: str = "absorb",
-                 transmit_func: str = "ground_glass_transmit",
-                 scatter_func: str = "ground_glass_diffuser",
-                 reflect_func: str = "mirror95",
-                 bins: Tuple = (20, 20)):
+                 transmit_func: int = 3,  # see numba_func_selector
+                 scatter_func: int = 2,  # see numba_func_selector
+                 reflect_func: int = 5,  # see numba_func_selector
+                 bins: Tuple = (21, 21)):
         """
         This class is used to define ground planes, diffraction planes and mirrors.
 
@@ -42,27 +50,18 @@ class Plane:
             self.name = name
 
         self.position = position
-        self.normal = core.normalise(normal)
+        self.normal = normalise(normal)
 
         self.length = length
         self.width = width
 
         self.corners = None
-        self.range = None
         self._calc_corner()
 
-        self.transmit_type = trans_type
-        if trans_type == "absorb":
-            self.trans_type_id = 0
-        elif trans_type == "transmit":
-            self.trans_type_id = 1
-        elif trans_type == "tran_refl":
-            self.trans_type_id = 2
-        elif trans_type == "reflect":
-            self.trans_type_id = 3
-        self.transmit_func = plane_func_factory(transmit_func)
-        self.scatter_func = plane_func_factory(scatter_func)
-        self.reflect_func = plane_func_factory(reflect_func)
+        self.transmit_type = TransmissionTypes[trans_type]
+        self.transmit_func = transmit_func
+        self.scatter_func = scatter_func
+        self.reflect_func = reflect_func
 
         # data
         self.hits = None
@@ -88,19 +87,16 @@ class Plane:
             self.corners = np.array([self.position[0] - self.width / 2, self.position[0] + self.width / 2,
                                      self.position[1] - self.length / 2, self.position[1] + self.length / 2,
                                      self.position[2], self.position[2]], dtype="float64")
-            self.range = self.corners[:4]
         elif self.normal[0] == 0 and self.normal[2] == 0:
             self.corners = np.array([self.position[0] - self.width / 2, self.position[0] + self.width / 2,
                                      self.position[1], self.position[1],
                                      self.position[2] - self.width / 2, self.position[2] + self.width / 2],
                                     dtype="float64")
-            self.range = np.hstack((self.corners[:2], self.corners[4:]))
         elif self.normal[1] == 0 and self.normal[2] == 0:
             self.corners = np.array([self.position[0], self.position[0],
                                      self.position[1] - self.length / 2, self.position[1] + self.length / 2,
                                      self.position[2] - self.width / 2, self.position[2] + self.width / 2],
                                     dtype="float64")
-            self.range = self.corners[2:]
         else:
             raise ValueError("non-vertical or -horizontal planes is currently not supported.")
 
@@ -120,13 +116,13 @@ class Plane:
         16 = uid
         """
         grouped_data = np.array([
-            self.trans_type_id,
+            self.transmit_type.value,
             self.transmit_func,
             self.scatter_func,
-            self.reflect_func,
-            self.position,
-            self.normal
-        ], dtype=dtype)
+            self.reflect_func], dtype=dtype)
+        grouped_data = np.append(grouped_data, self.position)
+        grouped_data = np.append(grouped_data, self.normal)
+
         for corner in self.corners:
             grouped_data = np.append(grouped_data, corner)
 
@@ -151,18 +147,20 @@ class Plane:
 
         return xx, yy, zz
 
-    def create_histogram(self, **kwargs):
+    def create_histogram(self, kwargs: dict = None):
         kkwargs = {
             "bins": self.bins,
         }
 
-        kkwargs = kkwargs | kwargs
+        if kwargs is not None:
+            kkwargs = kkwargs | kwargs
+
         hist, xedges, yedges = np.histogram2d(x=self.hits[:, 0], y=self.hits[:, 1], **kkwargs)
         if self.hist is None:
             self.hist = hist
         return hist, xedges, yedges
 
-    def hit_stats(self, normalized=False):
+    def hit_stats(self, normalized: bool = False):
         if self.hist is None:
             self.create_histogram()
 
@@ -170,15 +168,15 @@ class Plane:
         his_array = np.reshape(self.hist, (self.hist.shape[0] * self.hist.shape[1],))
         mean_ = float(np.mean(his_array))
         if normalized:
-            data = [sig_figs(np.min(his_array)/mean_),
-                    sig_figs(np.percentile(his_array, 1)/mean_),
-                    sig_figs(np.percentile(his_array, 5)/mean_),
-                    sig_figs(np.percentile(his_array, 10)/mean_),
-                    sig_figs(mean_/mean_),
-                    sig_figs(np.percentile(his_array, 90)/mean_),
-                    sig_figs(np.percentile(his_array, 95)/mean_),
-                    sig_figs(np.percentile(his_array, 99)/mean_),
-                    sig_figs(np.max(his_array)/mean_)]
+            data = [sig_figs(np.min(his_array) / mean_),
+                    sig_figs(np.percentile(his_array, 1) / mean_),
+                    sig_figs(np.percentile(his_array, 5) / mean_),
+                    sig_figs(np.percentile(his_array, 10) / mean_),
+                    sig_figs(mean_ / mean_),
+                    sig_figs(np.percentile(his_array, 90) / mean_),
+                    sig_figs(np.percentile(his_array, 95) / mean_),
+                    sig_figs(np.percentile(his_array, 99) / mean_),
+                    sig_figs(np.max(his_array) / mean_)]
         else:
             data = [sig_figs(np.min(his_array)),
                     sig_figs(np.percentile(his_array, 1)),
@@ -204,15 +202,14 @@ class Plane:
 
     def plot_heat_map(self, **kwargs):
         kkwargs = {
-            # "nbinsx": self.bins[0],
-            # "nbinsy": self.bins[1]
+            "nbinsx": self.bins[0],
+            "nbinsy": self.bins[1]
         }
 
         kkwargs = kkwargs | kwargs
         heat_map = go.Histogram2d(x=self.hits[:, 0], y=self.hits[:, 1], **kkwargs)
         fig = go.Figure(heat_map)
-        layout_kwargs = {"width": 1200}
-        default_plot_layout(fig, layout_kwargs)
+        default_plot_layout(fig)
         return fig
 
     def plot_sensor(self, xy: np.ndarray, r: float, normalize: bool = False, **kwargs):
@@ -223,13 +220,22 @@ class Plane:
 
         if normalize:
             kkwargs["marker"] = dict(showscale=True, size=25, colorbar=dict(title="<b>normalized<br>irradiance</b>"))
-            z = z/np.max(z)
+            z = z / np.max(z)
 
         kkwargs = kkwargs | kwargs
         scatter = go.Scatter(x=xy[:, 0], y=xy[:, 1], mode='markers', marker_color=z, **kkwargs)
         fig = go.Figure(scatter)
-        layout_kwargs = {"width": 800 * (np.max(xy[:, 0])-np.min(xy[:, 0])) / (np.max(xy[:, 1])-np.min(xy[:, 1])) + 150}
-        default_plot_layout(fig, layout_kwargs)
+        default_plot_layout(fig)
+        return fig
+
+    def plot_surface(self, kwargs: dict = None):
+        kkwargs = {}
+        if kwargs is not None:
+            kkwargs = kkwargs | kwargs
+
+        surf = go.Surface(z=self.hist, **kkwargs)
+        fig = go.Figure(surf)
+        default_plot_layout(fig)
         return fig
 
     def shape_grid(self, xy: np.ndarray, r: float = 1) -> np.ndarray:
@@ -246,5 +252,76 @@ class Plane:
         :param r radius
         :return number of hits in circle
         """
-        dis = np.linalg.norm(point-self.hits[:, 0:2], axis=1)
-        return int(np.sum(dis <= r, axis=0))
+        distance = np.linalg.norm(point - self.hits[:, 0:2], axis=1)
+        return int(np.sum(distance <= r, axis=0))
+
+    def plot_rdf(self, **kwargs):
+        fig = go.Figure()
+        self.plot_add_rdf(fig, **kwargs)
+        default_plot_layout(fig)
+
+        return fig
+
+    def plot_add_rdf(self, fig, **kwargs):
+        _args = [k for k, v in inspect.signature(self.rdf).parameters.items()]
+        _dict = {k: kwargs.pop(k) for k in dict(kwargs) if k in _args}
+        x, hist = self.rdf(**_dict)
+
+        line = go.Scatter(x=x, y=hist, mode="lines", **kwargs)
+        fig.add_trace(line)
+
+    def rdf(self, bins: int = 20, normalize: bool = False) -> Tuple[np.ndarray, np.ndarray]:
+        """ Calculates radial density. """
+        distance = np.linalg.norm(self.hits[:, 0:2], axis=1)
+
+        flag = True
+        default = self.width / 2
+        while flag:
+            hist, bin_edges = np.histogram(distance, bins=bins,
+                                           range=(0, min([self.width / 2, self.length / 2, default])))
+            if np.count_nonzero(hist) < int(hist.size / 2):
+                default = default / 2  # automatic adjust window to make sure its not mostly zeros
+            else:
+                flag = False
+
+        x = np.empty_like(hist, dtype="float64")
+        for i in range(hist.size):
+            hist[i] = hist[i] / (np.pi * (bin_edges[i + 1] ** 2 - bin_edges[i] ** 2))
+            x[i] = (bin_edges[i + 1] + bin_edges[i]) / 2
+
+        if normalize:
+            hist = hist / np.max(hist)
+
+        return x, hist
+
+    def plot_hits_x(self, **kwargs):
+        fig = go.Figure()
+        self.plot_add_hits_x(fig, **kwargs)
+        default_plot_layout(fig)
+
+        return fig
+
+    def plot_add_hits_x(self, fig, **kwargs):
+        _args = [k for k, v in inspect.signature(self.hits_along_x).parameters.items()]
+        _dict = {k: kwargs.pop(k) for k in dict(kwargs) if k in _args}
+        x, hist = self.hits_along_x(**_dict)
+
+        line = go.Scatter(x=x, y=hist, mode="lines", **kwargs)
+        fig.add_trace(line)
+
+    def hits_along_x(self, delta_y: float = 0.05, bins: int = 20, normalize: bool = False) \
+            -> Tuple[np.ndarray, np.ndarray]:
+
+        mask = np.abs(self.hits[:, 1]) < delta_y
+        x_dist = self.hits[mask, 0]
+
+        hist, bin_edges = np.histogram(x_dist, bins=bins)
+
+        x = np.empty_like(hist, dtype="float64")
+        for i in range(hist.size):
+            x[i] = (bin_edges[i + 1] + bin_edges[i]) / 2
+
+        if normalize:
+            hist = hist / np.max(hist)
+
+        return x, hist
