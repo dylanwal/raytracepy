@@ -1,7 +1,6 @@
 import numpy as np
 import plotly.graph_objs as go
-from scipy.integrate import cumtrapz
-from raytracepy.utils.distributions import sphere_distribution
+from raytracepy.utils.analysis_func import sphere_distribution, rdf, adf, hits_along_line
 
 from numba import njit, config
 
@@ -9,7 +8,7 @@ config.DISABLE_JIT = False
 
 
 def main():
-    h = 5
+    h = 1
 
     def _pdf(_x):
         return 1 / (_x ** 2 + h ** 2)
@@ -25,13 +24,17 @@ def main():
     # fig = go.Figure(go.Scatter3d(x=x, y=y, z=z, mode="markers"))
     # fig.write_html("temp.html", auto_open=True)
 
-    # x_, hist = sphere_distribution(xyz=np.column_stack((x,y,z)))
-    # fig = go.Figure(go.Scatter(x=x_, y=hist, mode="lines"))
-    # fig.write_html("temp2.html", auto_open=True)
+    x_, hist = sphere_distribution(xyz=np.column_stack((x,y,z)))
+    fig = go.Figure(go.Scatter(x=x_, y=hist, mode="lines"))
+    fig.write_html("temp2.html", auto_open=True)
 
-    # x_, hist = adf(xy_hits=np.column_stack((x,y)))
-    # fig = go.Figure(go.Scatter(x=x_, y=hist, mode="lines"))
-    # fig.write_html("temp3.html", auto_open=True)
+    x_, hist = adf(xy=np.column_stack((x,y)))
+    fig = go.Figure(go.Scatter(x=x_, y=hist, mode="lines"))
+    fig.write_html("temp3.html", auto_open=True)
+
+    x_, hist = adf(xy=np.column_stack((y,z)))
+    fig = go.Figure(go.Scatter(x=x_, y=hist, mode="lines"))
+    fig.write_html("temp3.html", auto_open=True)
 
     t = h/z
     hit_x = x*t
@@ -58,130 +61,21 @@ def main():
     #     fig.add_trace(go.Scatter3d(x=ray[:, 0], y=ray[:, 1], z=ray[:, 2], mode="lines"))
     # fig.write_html("temp.html", auto_open=True)
 
-    fig = go.Figure(go.Histogram2d(x=hit_x, y=hit_y, nbinsx=20, nbinsy=20))
-    fig.write_html("temp.html", auto_open=True)
+    # fig = go.Figure(go.Histogram2d(x=hit_x, y=hit_y, nbinsx=20, nbinsy=20))
+    # fig.write_html("temp.html", auto_open=True)
 
     # x_, hist = adf(np.column_stack((hit_x, hit_y)), bins=40, normalize=True)
     # fig = go.Figure(go.Scatter(x=x_, y=hist, mode="lines"))
     # fig.write_html("temp2.html", auto_open=True)
 
-    x_, hist = hits_along_axis(np.column_stack((hit_x, hit_y)), delta=0.1, normalize=True)
-    fig = go.Figure(go.Scatter(x=x_, y=hist, mode="lines"))
-    x_, hist = hits_along_line(np.column_stack((hit_x, hit_y)), bins=40, normalize=True, line_angle=np.pi / 4)
-    fig.add_trace(go.Scatter(x=x_, y=hist, mode="lines"))
-    x_, hist = rdf(np.column_stack((hit_x, hit_y)), bins=40, normalize=True)
-    fig.add_trace(go.Scatter(x=x_, y=hist, mode="lines"))
-    fig.add_trace(go.Scatter(x=np.linspace(0, 10, 50), y=_pdf(np.linspace(0, 10, 50)) / (1 / h ** 2), mode="lines"))
-    fig.write_html("temp3.html", auto_open=True)
-
-
-def generate_cdf(func, npt: int = 11, x_range=(0, 1)):
-    """
-    Given a distribution x and y; return n points random chosen from the distribution
-    """
-    x = np.linspace(x_range[0], x_range[1], npt)
-    y = func(x)
-
-    y_norm = y / np.trapz(y, x)
-    cdf = cumtrapz(y_norm, x)
-    cdf = np.insert(cdf, 0, 0)
-
-    # index = np.argmin(np.abs(cdf - 1))
-    # if cdf[index] > 1:
-    #     cdf = cdf[0:index]
-    #     x = x[0:index]
-
-    return x, cdf
-
-
-def rvs(n, x, cdf):
-    _rnd = np.random.random(n)
-    return np.interp(_rnd, cdf, x)
-
-
-def hits_along_axis(xy_hits, delta: float = 0.05, bins: int = 20, normalize: bool = False, axis: int = 0):
-    if axis:  # y-axis
-        mask = np.abs(xy_hits[:, 0]) < delta
-        distance = xy_hits[mask, 1]
-    else:  # x-axis
-        mask = np.abs(xy_hits[:, 1]) < delta
-        distance = xy_hits[mask, 0]
-
-    hist, bin_edges = np.histogram(distance, bins=bins)
-
-    x = np.empty_like(hist, dtype="float64")
-    for i in range(hist.size):
-        x[i] = (bin_edges[i + 1] + bin_edges[i]) / 2
-
-    if normalize:
-        hist = hist / np.max(hist)
-
-    return x, hist
-
-
-def hits_along_line(xy_hits, line_point=np.array((0, 0)), line_angle: float = np.pi/4,
-                    delta: float = 0.05, bins: int = 20, normalize: bool = False):
-
-    distance_from_line = np.abs(np.cos(line_angle)*(line_point[1]-xy_hits[:, 1]) -
-                                np.sin(line_angle)*(line_point[0]-xy_hits[:, 0]))
-    mask = np.abs(distance_from_line) < delta
-    xy_hits = xy_hits[mask, :]
-
-    distance = np.linalg.norm(xy_hits, axis=1)
-
-    hist, bin_edges = np.histogram(distance, bins=bins)
-
-    x = np.empty_like(hist, dtype="float64")
-    for i in range(hist.size):
-        x[i] = (bin_edges[i + 1] + bin_edges[i]) / 2
-
-    if normalize:
-        hist = hist / np.max(hist)
-
-    return x, hist
-
-
-def rdf(xy_hits, bins: int = 20, _range=(0, 10), normalize: bool = False):
-    """ Calculates radial averaged density. """
-    distance = np.linalg.norm(xy_hits, axis=1)
-    mask = distance > _range[0]
-    distance = distance[mask]
-    mask = distance < _range[1]
-    distance = distance[mask]
-
-    hist, bin_edges = np.histogram(distance, bins=bins)
-
-    x = np.empty_like(hist, dtype="float64")
-    for i in range(hist.size):
-        hist[i] = hist[i] / (np.pi * (bin_edges[i + 1]**2 - bin_edges[i]**2))
-        x[i] = (bin_edges[i + 1] + bin_edges[i]) / 2
-
-    if normalize:
-        hist = hist / np.max(hist)
-
-    return x, hist
-
-
-def adf(xy_hits, bins: int = 20, _range=(0, 10), normalize: bool = False):
-    """ Calculates radial averaged density. """
-    distance = np.linalg.norm(xy_hits, axis=1)
-    mask = distance > _range[0]
-    xy_hits = xy_hits[mask, :]
-    mask = distance[mask] < _range[1]
-    xy_hits = xy_hits[mask, :]
-
-    angle = np.arctan2(xy_hits[:, 0], xy_hits[:, 1])
-
-    hist, bin_edges = np.histogram(angle, bins=bins)
-
-    x = np.empty_like(hist, dtype="float64")
-    for i in range(hist.size):
-        x[i] = (bin_edges[i + 1] + bin_edges[i]) / 2
-
-    if normalize:
-        hist = hist / np.max(hist)
-
-    return x, hist
+    # x_, hist = hits_along_line(np.column_stack((hit_x, hit_y)), bins=40, normalize=True, line_angle=np.pi / 4)
+    # fig.add_trace(go.Scatter(x=x_, y=hist, mode="lines"))
+    # x_, hist = rdf(np.column_stack((hit_x, hit_y)), bins=20, normalize=True)
+    # print(",".join([str(i) for i in x_]))
+    # print(",".join([str(i) for i in hist]))
+    # fig.add_trace(go.Scatter(x=x_, y=hist, mode="lines"))
+    # fig.add_trace(go.Scatter(x=np.linspace(0, 10, 50), y=_pdf(np.linspace(0, 10, 50)) / (1 / h ** 2), mode="lines"))
+    # fig.write_html("temp3.html", auto_open=True)
 
 
 dtype = "float64"
@@ -204,8 +98,8 @@ def sample(mean, L, n: int = 1):
 
 @njit
 def calc_L(dim=2, epsilon=1.0001):
-    K = epsilon * np.identity(dim)
-    return np.linalg.cholesky(K)
+    k = epsilon * np.identity(dim)
+    return np.linalg.cholesky(k)
 
 
 @njit
@@ -225,6 +119,158 @@ def metropolis_hastings(target_density, init=np.array([0, 0], dtype=dtype), size
     samples = np.empty((size, 2), dtype=dtype)
     samples = metropolis_hastings_loop(target_density, init, samples)
     return samples[burnin_size:, :]
+
+
+def main_theory():
+    """ Using the answer check analysis tools. """
+    h = 5
+
+    def _pdf(_x):
+        return 1 / (_x ** 2 + h ** 2)
+
+    n = 5_000_000
+    samples = metropolis_hastings(pdf2D, size=n)
+    hit_x = samples[:, 0]
+    hit_y = samples[:, 1]
+    print(hit_x.size)
+
+    fig = go.Figure(go.Histogram2d(x=hit_x, y=hit_y, nbinsx=20, nbinsy=20))
+    fig.write_html("temp.html", auto_open=True)
+
+    x_, hist = adf(np.column_stack((hit_x, hit_y)), bins=20, normalize=True)
+    fig = go.Figure(go.Scatter(x=x_, y=hist, mode="lines"))
+    fig.write_html("temp2.html", auto_open=True)
+
+    #
+    x_, hist = hits_along_line(np.column_stack((hit_x, hit_y)), bins=20, normalize=True, line_angle=np.pi/8)
+    fig = go.Figure(go.Scatter(x=x_, y=hist, mode="lines"))
+    x_, hist = rdf(np.column_stack((hit_x, hit_y)), bins=20, normalize=True)
+    fig.add_trace(go.Scatter(x=x_, y=hist, mode="lines"))
+    fig.add_trace(go.Scatter(x=np.linspace(0, 10, 50), y=_pdf(np.linspace(0, 10, 50)) / (1 / h ** 2), mode="lines"))
+    fig.write_html("temp3.html", auto_open=True)
+
+    print("hi")
+
+
+@njit
+def normalise(vector: np.ndarray) -> np.ndarray:
+    """
+    Object is guaranteed to be a unit quaternion after calling this
+    operation UNLESS the object is equivalent to Quaternion(0)
+    """
+    n = np.sqrt(np.dot(vector, vector))
+    if n > 0:
+        return vector / n
+    else:
+        return vector
+
+
+def main_theory2():
+    """ Using the answer check analysis tools. """
+
+    n = 1000_0000
+    samples = metropolis_hastings(pdf2D, size=n)
+    hit_x = samples[:, 0]
+    hit_y = samples[:, 1]
+    r_sq = hit_y**2 + hit_x**2
+    mask = r_sq < 100
+    hit_x = hit_x[mask]
+    hit_y = hit_y[mask]
+
+    print(hit_x.size)
+
+    fig = go.Figure(go.Histogram2d(x=hit_x, y=hit_y, nbinsx=30, nbinsy=30))
+    layout = {
+        "autosize": False,
+        "width": 900,
+        "height": 790,
+        "showlegend": False,
+        "font": dict(family="Arial", size=18, color="black"),
+        "plot_bgcolor": "white"
+    }
+    fig.update_layout(layout)
+    fig.update_xaxes({"title": "<b>X<b>"})
+    fig.update_yaxes({"title": "<b>Y<b>"})
+    fig.write_html("temp.html", auto_open=True)
+
+
+    m = 800
+    mm = int(hit_x.size/m)
+    m = int(hit_x.size/mm)
+    xyz = np.empty((m, 3))
+    for i in range(m):
+        ii = i*mm
+        xyz[i, :] = normalise(np.array((hit_x[ii], hit_y[ii], -5)))
+
+    fig = go.Figure(go.Scatter3d(x=xyz[:, 0], y=xyz[:, 1], z=xyz[:, 2], mode="markers"))
+    layout = {
+        "autosize": False,
+        "width": 900,
+        "height": 790,
+        "showlegend": False,
+        "font": dict(family="Arial", size=18, color="black"),
+        "plot_bgcolor": "white"
+    }
+    fig.update_layout(layout)
+    fig.update_xaxes({"title": "<b>X<b>"})
+    fig.update_yaxes({"title": "<b>Y<b>"})
+    fig.write_html("temp3D.html", auto_open=True)
+    #
+    #
+    # xyz = np.empty((hit_x.size, 3))
+    # for i in range(hit_x.size):
+    #     xyz[i, :] = normalise(np.array((hit_x[i], hit_y[i], 5)))
+    #
+    #
+    # hist, x_hist = np.histogram(xyz[:, 2], bins=40)
+    # fig = go.Figure(go.Scatter(x=x_hist[:-1], y=hist, mode="lines"))
+    # fig.write_html("temp2.html", auto_open=True)
+    #
+    # def func(x):
+    #     return np.pi * (np.sqrt(1-x**2) * x + np.arcsin(x))
+    #
+    # x = np.empty_like(hist, dtype="float64")
+    # for i in range(hist.size):
+    #     a1 = func(x_hist[i])
+    #     a2 = func(x_hist[i+1])
+    #     hist[i] = hist[i] / (a2-a1)
+    #     x[i] = (x_hist[i] + x_hist[i + 1]) / 2
+    # fig = go.Figure(go.Scatter(x=x_hist[:-1], y=hist, mode="lines"))
+    # fig.write_html("temp22.html", auto_open=True)
+
+    # x_, hist = sphere_distribution(xyz=xyz)
+    # print(",".join([str(i) for i in x_]))
+    # print(",".join([str(i) for i in hist]))
+    # fig = go.Figure(go.Scatter(x=x_, y=hist, mode="lines"))
+    # fig.write_html("temp2.html", auto_open=True)
+    #
+    # x_, hist = adf(xy=xyz[:, :-1])
+    # fig = go.Figure(go.Scatter(x=x_, y=hist, mode="lines"))
+    # fig.write_html("temp3.html", auto_open=True)
+
+
+    theta = np.arctan(np.sqrt(hit_x**2 + hit_y**2) / 5)
+    hist, x_hist = np.histogram(theta, bins=100)
+    print(",".join([str(i) for i in x_hist]))
+    print(",".join([str(i) for i in hist]))
+    for i in range(hist.size):
+        hist[i] = hist[i] #/ np.tan((x_hist[i]+x_hist[i+1])/2) # (2 * np.pi * (np.cos(x_hist[i]) - np.cos(x_hist[i +
+        # 1])))
+    fig = go.Figure(go.Scatter(x=x_hist[:-1], y=hist, mode="lines"))
+    fig.write_html("temp22.html", auto_open=True)
+
+
+
+    # x_, hist = hits_along_line(np.column_stack((hit_x, hit_y)), bins=20, normalize=True, line_angle=np.pi/8)
+    # fig = go.Figure(go.Scatter(x=x_, y=hist, mode="lines"))
+    # x_, hist = rdf(np.column_stack((hit_x, hit_y)), bins=20, normalize=True)
+    # fig.add_trace(go.Scatter(x=x_, y=hist, mode="lines"))
+    # def _pdf(_x):
+    #     return 1 / (_x ** 2 + 5 ** 2)
+    # fig.add_trace(go.Scatter(x=np.linspace(0, 10, 50), y=_pdf(np.linspace(0, 10, 50)) / (1 / 5 ** 2), mode="lines"))
+    # fig.write_html("temp3.html", auto_open=True)
+
+    print("hi")
 
 
 class DynamicArray:
@@ -252,76 +298,6 @@ class DynamicArray:
         return np.reshape(data, newshape=(len(data)/5, 5))
 
 
-def main3():
-    """ Using the answer check analysis tools. """
-    h = 5
-
-    def _pdf(_x):
-        return 1 / (_x ** 2 + h ** 2)
-
-    n = 5_000_000
-    samples = metropolis_hastings(pdf2D, size=n)
-    hit_x = samples[:, 0]
-    hit_y = samples[:, 1]
-    print(hit_x.size)
-
-    fig = go.Figure(go.Histogram2d(x=hit_x, y=hit_y, nbinsx=20, nbinsy=20))
-    fig.write_html("temp.html", auto_open=True)
-
-    x_, hist = adf(np.column_stack((hit_x, hit_y)), bins=20, normalize=True)
-    fig = go.Figure(go.Scatter(x=x_, y=hist, mode="lines"))
-    fig.write_html("temp2.html", auto_open=True)
-
-    #
-    x_, hist = hits_along_line(np.column_stack((hit_x, hit_y)), bins=20, normalize=True, line_angle=np.pi/8)
-    fig = go.Figure(go.Scatter(x=x_, y=hist, mode="lines"))
-    x_, hist = rdf(np.column_stack((hit_x, hit_y)), bins=20, normalize=True)
-    fig.add_trace(go.Scatter(x=x_, y=hist, mode="lines"))
-    x__, hist_ = hits_along_axis(np.column_stack((hit_x, hit_y)), delta=0.1, bins=20, normalize=True)
-    fig.add_trace(go.Scatter(x=x__, y=hist_, mode="lines"))
-    fig.add_trace(go.Scatter(x=np.linspace(0, 10, 50), y=_pdf(np.linspace(0, 10, 50)) / (1 / h ** 2), mode="lines"))
-    fig.write_html("temp3.html", auto_open=True)
-
-    print("hi")
-
-
-def main4():
-    h = 5
-
-    def _pdf(_x):
-        return 1 / (_x ** 2 + h ** 2)
-
-    n = 10_000_000
-    x, cdf = generate_cdf(_pdf, npt=101, x_range=[-10, 10])
-    rnd = rvs(n, x, cdf)
-    _n = int(rnd.size/2)
-    hit_x = rnd[:_n]
-    hit_y = rnd[_n:2*_n]
-    x__, hist_ = hits_along_axis(np.column_stack((hit_x, hit_y)), delta=0.1, bins=20, normalize=True)
-    fig = go.Figure(go.Scatter(x=x__, y=hist_, mode="lines"))
-
-    theta = np.random.uniform(low=0, high=2*np.pi, size=(n,))
-    phi = np.arccos(2*np.random.uniform(low=0, high=1, size=(n,)) - 1) - np.pi/2
-    x = np.cos(theta) * np.cos(phi)
-    y = np.sin(theta) * np.cos(phi)
-    z = np.sin(phi)
-    t = h/z
-    hit_x = x*t
-    hit_y = y*t
-    mask = np.abs(hit_x) < 10
-    hit_x = hit_x[mask]
-    hit_y = hit_y[mask]
-    mask = np.abs(hit_y) < 10
-    hit_x = hit_x[mask]
-    hit_y = hit_y[mask]
-    x__, hist_ = hits_along_axis(np.column_stack((hit_x, hit_y)), delta=0.1, bins=20, normalize=True)
-    fig.add_trace(go.Scatter(x=x__, y=hist_, mode="lines"))
-
-    fig.add_trace(go.Scatter(x=np.linspace(0, 10, 50), y=_pdf(np.linspace(0, 10, 50)) / (1 / h ** 2), mode="lines"))
-    fig.write_html("temp1.html", auto_open=True)
-
-    print("hi")
-
-
 if __name__ == "__main__":
-    main()
+    main_theory2()
+    # main()

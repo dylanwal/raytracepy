@@ -1,5 +1,6 @@
-from typing import Tuple, List
+from typing import Tuple
 from enum import Enum
+from functools import wraps
 import inspect
 
 import numpy as np
@@ -8,6 +9,7 @@ import plotly.graph_objs as go
 from . import get_object_uid, default_plot_layout, dtype
 from .utils.sig_figs import sig_figs
 from .core import normalise
+from .utils.analysis_func import hits_along_line, rdf
 
 
 class TransmissionTypes(Enum):
@@ -255,6 +257,7 @@ class Plane:
         distance = np.linalg.norm(point - self.hits[:, 0:2], axis=1)
         return int(np.sum(distance <= r, axis=0))
 
+    @wraps(rdf)
     def plot_rdf(self, **kwargs):
         fig = go.Figure()
         self.plot_add_rdf(fig, **kwargs)
@@ -262,6 +265,7 @@ class Plane:
 
         return fig
 
+    @wraps(rdf)
     def plot_add_rdf(self, fig, **kwargs):
         _args = [k for k, v in inspect.signature(self.rdf).parameters.items()]
         _dict = {k: kwargs.pop(k) for k in dict(kwargs) if k in _args}
@@ -270,58 +274,27 @@ class Plane:
         line = go.Scatter(x=x, y=hist, mode="lines", **kwargs)
         fig.add_trace(line)
 
-    def rdf(self, bins: int = 20, normalize: bool = False) -> Tuple[np.ndarray, np.ndarray]:
-        """ Calculates radial density. """
-        distance = np.linalg.norm(self.hits[:, 0:2], axis=1)
+    @wraps(rdf)
+    def rdf(self, **kwargs):
+        return rdf(self.hits, **kwargs)
 
-        flag = True
-        default = self.width / 2
-        while flag:
-            hist, bin_edges = np.histogram(distance, bins=bins,
-                                           range=(0, min([self.width / 2, self.length / 2, default])))
-            if np.count_nonzero(hist) < int(hist.size / 2):
-                default = default / 2  # automatic adjust window to make sure its not mostly zeros
-            else:
-                flag = False
-
-        x = np.empty_like(hist, dtype="float64")
-        for i in range(hist.size):
-            hist[i] = hist[i] / (np.pi * (bin_edges[i + 1] ** 2 - bin_edges[i] ** 2))
-            x[i] = (bin_edges[i + 1] + bin_edges[i]) / 2
-
-        if normalize:
-            hist = hist / np.max(hist)
-
-        return x, hist
-
-    def plot_hits_x(self, **kwargs):
+    @wraps(hits_along_line)
+    def plot_hits_line(self, **kwargs):
         fig = go.Figure()
-        self.plot_add_hits_x(fig, **kwargs)
+        self.plot_add_hits_line(fig, **kwargs)
         default_plot_layout(fig)
 
         return fig
 
-    def plot_add_hits_x(self, fig, **kwargs):
-        _args = [k for k, v in inspect.signature(self.hits_along_x).parameters.items()]
+    @wraps(hits_along_line)
+    def plot_add_hits_line(self, fig, **kwargs):
+        _args = [k for k, v in inspect.signature(self.hits_along_line).parameters.items()]
         _dict = {k: kwargs.pop(k) for k in dict(kwargs) if k in _args}
-        x, hist = self.hits_along_x(**_dict)
+        x, hist = self.hits_along_line(**_dict)
 
         line = go.Scatter(x=x, y=hist, mode="lines", **kwargs)
         fig.add_trace(line)
 
-    def hits_along_x(self, delta_y: float = 0.05, bins: int = 20, normalize: bool = False) \
-            -> Tuple[np.ndarray, np.ndarray]:
-
-        mask = np.abs(self.hits[:, 1]) < delta_y
-        x_dist = self.hits[mask, 0]
-
-        hist, bin_edges = np.histogram(x_dist, bins=bins)
-
-        x = np.empty_like(hist, dtype="float64")
-        for i in range(hist.size):
-            x[i] = (bin_edges[i + 1] + bin_edges[i]) / 2
-
-        if normalize:
-            hist = hist / np.max(hist)
-
-        return x, hist
+    @wraps(hits_along_line)
+    def hits_along_line(self, **kwargs):
+        return hits_along_line(self.hits[:, :2], **kwargs)

@@ -190,11 +190,8 @@ class RayTrace:
     def print_stats(self):
         print(self.stats())
 
-    def plot_traces(self, **kwargs):
+    def plot_traces(self):
         """ Create 3d plot of light ray traces. """
-        kkwargs = {}
-        if kwargs:
-            kkwargs = kkwargs | kwargs
 
         fig = go.Figure()
         self._add_planes(fig)
@@ -334,12 +331,8 @@ class RayTrace:
 
         for rays in rays:
             cone = go.Cone(
-                x=[0],
-                y=[0],
-                z=[0],
-                u=[float(rays[0])],
-                v=[float(rays[1])],
-                w=[float(rays[2])],
+                x=[0], y=[0], z=[0],
+                u=[float(rays[0])], v=[float(rays[1])], w=[float(rays[2])],
                 **kwargs)
             fig.add_trace(cone)
         default_plot_layout(fig)

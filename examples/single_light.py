@@ -28,7 +28,7 @@ def main():
     sim = rpy.RayTrace(
         planes=ground,
         lights=light,
-        total_num_rays=3000000
+        total_num_rays=500_0000
     )
     sim.run()
 
@@ -37,22 +37,17 @@ def main():
     sim.print_stats()
     ground.print_hit_stats()
     ground.print_hit_stats(True)
-    light.plot_sphere_dist()
     # sim.plot_traces()
 
-    def func(x, c: float = 1, r: float = 1):
-        return c / (x**2 + r**2)
-
     import plotly.graph_objs as go
-    # from scipy.optimize import curve_fit
-    # popt, pcov = curve_fit(func, _x, hist)
-    # print(popt)
 
     fig = go.Figure()
-    ground.plot_add_rdf(fig, bins=20, normalize=True)
-    ground.plot_add_hits_x(fig, bins=20, normalize=True)
+    ground.plot_add_rdf(fig, bins=40, normalize=True)
+    x, y = ground.rdf()
+    print(",".join([str(i) for i in x]))
+    print(",".join([str(i) for i in y]))
     x = np.linspace(0, 10, 11)
-    fig.add_trace(go.Scatter(x=x, y=func(x, 1, 5)/0.04, mode="lines"))
+    fig.add_trace(go.Scatter(x=x, y=(1 / (x**2 + 5**2))/0.04, mode="lines"))
     fig.write_html(f'temp_s.html', auto_open=True)
 
     # sim.save_data(file_name="single_3M")

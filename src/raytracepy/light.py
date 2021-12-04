@@ -6,7 +6,7 @@ import plotly.graph_objs as go
 
 from . import dtype, get_object_uid, default_plot_layout
 from .core import normalise
-from .utils.distributions import sphere_distribution
+from .utils.analysis_func import sphere_distribution
 
 
 class Light:
@@ -63,13 +63,15 @@ class Light:
         text += f"\n\t power: {self.power}, num_rays: {self.num_rays}"
         return text
 
+    @wraps(sphere_distribution)
     def plot_sphere_dist(self, **kwargs):
         fig = go.Figure()
         self.plot_add_sphere_dist(fig, **kwargs)
-        default_plot_layout(fig, )
+        default_plot_layout(fig)
 
         return fig
 
+    @wraps(sphere_distribution)
     def plot_add_sphere_dist(self, fig, **kwargs):
         _args = [k for k, v in inspect.signature(sphere_distribution).parameters.items()]
         _dict = {k: kwargs.pop(k) for k in dict(kwargs) if k in _args}
@@ -82,9 +84,9 @@ class Light:
     def sphere_distribution(self, **kwargs):
         return sphere_distribution(self.rays, **kwargs)
 
-    def plot_rays(self, **kwargs):
+    def plot_rays(self):
         fig = go.Figure()
-        self.plot_add_rays(fig, **kwargs)
+        self.plot_add_rays(fig)
         self.plot_add_light(fig)
         default_plot_layout(fig)
 

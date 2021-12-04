@@ -1,9 +1,6 @@
 dtype = "float64"
 
-
 from numba import config
-
-
 config.DISABLE_JIT = False
 
 
@@ -23,8 +20,6 @@ def time_it(func):
 
 
 object_counter: int = -1
-
-
 def get_object_uid() -> int:
     """ Gives uid to objects. """
     global object_counter
@@ -33,8 +28,6 @@ def get_object_uid() -> int:
 
 
 _figure_counter: int = 0
-
-
 def default_plot_layout(fig, **kwargs):
     global _figure_counter
     layout = {

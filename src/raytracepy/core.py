@@ -13,7 +13,7 @@ import numpy as np
 from numba import njit
 
 from . import dtype
-from .ref_data.numba_funcs import numba_func_selector
+from .light_plane_funcs import theta_func_selector, probability_func_selector
 
 
 @njit  # ("f8[::](f8,f8[:],f8[:],i4)")
@@ -29,7 +29,7 @@ def create_rays(theta_func_id, direction,
     :param num_rays:
     :return num_rays by 3 matrix [x,y,z] direction vector
      """
-    theta = numba_func_selector(theta_func_id, n=num_rays)
+    theta = theta_func_selector(theta_func_id, num_rays)
     phi = get_phi(phi, num_rays)
     rays_dir = spherical_to_cartesian(theta, phi)
     rays_dir = rotate_vec(rays_dir, direction)
@@ -75,7 +75,7 @@ def trace_rays(ray_pos: np.ndarray, ray_dir: np.ndarray, plane_matrix: np.ndarra
 
                 if 0 < plane[0] <= 2:  # if plane type allows transmitted light
                     # calculate probably of light transmitting given the angle.
-                    prob = numba_func_selector(plane[1], np.array([angle], dtype=dtype))
+                    prob = probability_func_selector(plane[1], angle)
                     if np.random.random() < prob:
                         # if transmitted, calculate diffraction ray new direction
                         ray = create_rays(plane[2], direction=ray).reshape(3)
@@ -83,7 +83,7 @@ def trace_rays(ray_pos: np.ndarray, ray_dir: np.ndarray, plane_matrix: np.ndarra
 
                 if plane[0] >= 2:  # reflected light
                     # calculate probably of light reflecting given the angle.
-                    prob = numba_func_selector(plane[3], np.array([angle], dtype=dtype))
+                    prob = probability_func_selector(plane[3], angle)
                     if np.random.random() < prob:
                         # if reflected, calculate reflection ray
                         ray = normalise(refection_vector(ray, plane[7:10]))
