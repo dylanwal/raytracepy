@@ -4,12 +4,12 @@ pyproject.toml
 setup.cfg
 setup.py
 src/raytracepy/__init__.py
-src/raytracepy/core_functions.py
+src/raytracepy/core.py
 src/raytracepy/light.py
 src/raytracepy/light_layouts.py
+src/raytracepy/light_plane_funcs.py
 src/raytracepy/plane.py
-src/raytracepy/raytrace_simulator.py
-src/raytracepy/simulation_data.py
+src/raytracepy/raytrace.py
 src/raytracepy.egg-info/PKG-INFO
 src/raytracepy.egg-info/SOURCES.txt
 src/raytracepy.egg-info/dependency_links.txt

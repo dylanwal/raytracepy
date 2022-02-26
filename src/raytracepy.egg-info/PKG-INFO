@@ -20,3 +20,7 @@ License-File: LICENSE.txt
 
 This simple
 
+
+Limitations:
+* Geometry is limited only to vertical and horizontal planes.
+

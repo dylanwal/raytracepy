@@ -8,10 +8,10 @@ config.DISABLE_JIT = False
 
 
 def main():
-    h = 1
+    h = 5
 
     def _pdf(_x):
-        return 1 / (_x ** 2 + h ** 2)
+        return 1 / (_x ** 2 + h ** 2) * (h / np.sqrt(_x ** 2 + h ** 2))
 
     n = 5_000_000
     theta = np.random.uniform(low=0, high=2*np.pi, size=(n,))
@@ -24,17 +24,17 @@ def main():
     # fig = go.Figure(go.Scatter3d(x=x, y=y, z=z, mode="markers"))
     # fig.write_html("temp.html", auto_open=True)
 
-    x_, hist = sphere_distribution(xyz=np.column_stack((x,y,z)))
-    fig = go.Figure(go.Scatter(x=x_, y=hist, mode="lines"))
-    fig.write_html("temp2.html", auto_open=True)
-
-    x_, hist = adf(xy=np.column_stack((x,y)))
-    fig = go.Figure(go.Scatter(x=x_, y=hist, mode="lines"))
-    fig.write_html("temp3.html", auto_open=True)
-
-    x_, hist = adf(xy=np.column_stack((y,z)))
-    fig = go.Figure(go.Scatter(x=x_, y=hist, mode="lines"))
-    fig.write_html("temp3.html", auto_open=True)
+    # x_, hist = sphere_distribution(xyz=np.column_stack((x,y,z)))
+    # fig = go.Figure(go.Scatter(x=x_, y=hist, mode="lines"))
+    # fig.write_html("temp2.html", auto_open=True)
+    #
+    # x_, hist = adf(xy=np.column_stack((x,y)))
+    # fig = go.Figure(go.Scatter(x=x_, y=hist, mode="lines"))
+    # fig.write_html("temp3.html", auto_open=True)
+    #
+    # x_, hist = adf(xy=np.column_stack((y,z)))
+    # fig = go.Figure(go.Scatter(x=x_, y=hist, mode="lines"))
+    # fig.write_html("temp3.html", auto_open=True)
 
     t = h/z
     hit_x = x*t
@@ -68,14 +68,13 @@ def main():
     # fig = go.Figure(go.Scatter(x=x_, y=hist, mode="lines"))
     # fig.write_html("temp2.html", auto_open=True)
 
-    # x_, hist = hits_along_line(np.column_stack((hit_x, hit_y)), bins=40, normalize=True, line_angle=np.pi / 4)
-    # fig.add_trace(go.Scatter(x=x_, y=hist, mode="lines"))
-    # x_, hist = rdf(np.column_stack((hit_x, hit_y)), bins=20, normalize=True)
-    # print(",".join([str(i) for i in x_]))
-    # print(",".join([str(i) for i in hist]))
-    # fig.add_trace(go.Scatter(x=x_, y=hist, mode="lines"))
-    # fig.add_trace(go.Scatter(x=np.linspace(0, 10, 50), y=_pdf(np.linspace(0, 10, 50)) / (1 / h ** 2), mode="lines"))
-    # fig.write_html("temp3.html", auto_open=True)
+
+    x_, hist = rdf(np.column_stack((hit_x, hit_y)), bins=20, normalize=True)
+    print(",".join([str(i) for i in x_]))
+    print(",".join([str(i) for i in hist]))
+    fig = go.Figure(go.Scatter(x=x_, y=hist, mode="lines"))
+    fig.add_trace(go.Scatter(x=np.linspace(0, 10, 50), y=_pdf(np.linspace(0, 10, 50)) / (1 / h ** 2), mode="lines"))
+    fig.write_html("temp3.html", auto_open=True)
 
 
 dtype = "float64"
@@ -85,7 +84,7 @@ dtype = "float64"
 def pdf2D(z):
     if np.abs(z[0]) > 10 or np.abs(z[1]) > 10:
         return float(0)
-    return 1 / (z[0]**2 + z[1]**2 + 5**2)
+    return 1 / (z[0]**2 + z[1]**2 + 5**2) * (5 / np.sqrt(z[0]**2 + z[1]**2 + 5**2))
 
 
 @njit
@@ -299,5 +298,5 @@ class DynamicArray:
 
 
 if __name__ == "__main__":
-    main_theory2()
-    # main()
+    # main_theory2()
+    main()
