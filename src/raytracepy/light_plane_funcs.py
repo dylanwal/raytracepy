@@ -71,6 +71,22 @@ def diff_trans_fun(x):
 
 @njit
 def probability_func_selector(fun_id, x: float = 0):
+    """
+    probability of transmission or reflection function selector
+
+    Parameters
+    ----------
+    fun_id: int
+        function id
+    x: float
+        light angle of incidence (radians)
+
+    Returns
+    -------
+    output: float
+        probability of light transmitting or reflecting
+
+    """
     if fun_id == 3:
         """ probability of transmission through diffuser.  """
         return diff_trans_fun(x)
@@ -84,32 +100,14 @@ def probability_func_selector(fun_id, x: float = 0):
         """ probability of reflection on white pcb. """
         return 0.02
     else:
+        """ Error/invalid id; can't throw real error in numba codeblock so cause crazy bad data to signify error"""
         return -1000000
-
-
-@njit  # ("f8[:](f8[:],f8[:],i4)")
-def get_theta(x: np.ndarray, cdf: np.ndarray, n: int = 1) -> np.ndarray:
-    """
-    Given a distribution x and y; return n points random chosen from the distribution
-    :param x: value
-    :param cdf: population
-    :param n: number of random numbers you want
-    :return: np.array of random numbers
-    """
-    rnd = np.random.random((n,))
-    rnd = sphere_correction(rnd)
-    return np.interp(rnd, cdf, x)
-
-
-@njit
-def sphere_correction(x: np.ndarray) -> np.ndarray:
-    """ Turns [0, 1] to [0, 1] re-distributed to account for sphere."""
-    return np.arccos(x)/(np.pi/2)
 
 
 @njit
 def uniform_cdf():
-    x = np.array([
+    """ Cumulative distribution function for uniform point source. """
+    x = np.array([  # radian
         0,
         np.pi/2
     ],
@@ -125,9 +123,8 @@ def uniform_cdf():
 
 @njit
 def LED_theta_cdf():
-    """
-    """
-    x = np.array([
+    """ cumulative distribution function for LED. """
+    x = np.array([  # radian
         -3.141592653589793,
         -2.0943951023931957,
         -1.8849555921538759,
@@ -182,9 +179,8 @@ def LED_theta_cdf():
 
 @njit
 def glass_diffuser_theta_cdf():
-    """
-    """
-    x = np.array([
+    """ Cumulative distribution function for light through ground glass diffuser. """
+    x = np.array([  # radian
         -3.141592653589793,
         -0.9424777960769379,
         -0.7853981633974483,
@@ -221,8 +217,54 @@ def glass_diffuser_theta_cdf():
     return x, cdf
 
 
+@njit  # ("f8[:](f8[:],f8[:],i4)")
+def get_theta(x: np.ndarray, cdf: np.ndarray, n: int = 1) -> np.ndarray:
+    """
+    Given a distribution x and y; return n points random chosen from the distribution
+
+    Parameters
+    ----------
+    x: np.ndarray
+        angle for cdf (radians)
+    cdf: np.ndarray
+        cumulative distribution of refraction
+    n: int
+        number of random numbers you want
+
+    Returns
+    -------
+    output: np.ndarray
+
+    """
+    rnd = np.random.random((n,))
+    rnd = sphere_correction(rnd)
+    return np.interp(rnd, cdf, x)
+
+
+@njit
+def sphere_correction(x: np.ndarray) -> np.ndarray:
+    """ Turns [0, 1] to [0, 1] re-distributed to account for sphere."""
+    return np.arccos(x)/(np.pi/2)
+
+
 @njit  # ("f8[:](f8,f8[:],i4)")
 def theta_func_selector(fun_id: int, n: int = 1):
+    """
+    Theta function selector.
+
+    Parameters
+    ----------
+    fun_id: int
+        function id
+    n: int
+        number of theta values desired
+
+    Returns
+    -------
+    output: np.ndarray
+        values of theta distributed appropriately in spherical coordinates
+
+    """
     if fun_id == 0:
         """ theta function for uniform. """
         x_cdf, cdf = uniform_cdf()
@@ -236,4 +278,5 @@ def theta_func_selector(fun_id: int, n: int = 1):
         x_cdf, cdf = glass_diffuser_theta_cdf()
         return get_theta(x_cdf, cdf, n)
     else:
+        """ Error/invalid id; can't throw real error in numba codeblock so cause crazy bad data to signify error"""
         return np.ones(n, dtype=dtype) * -1000000

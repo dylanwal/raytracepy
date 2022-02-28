@@ -7,14 +7,13 @@ import plotly.graph_objs as go
 
 from . import dtype, Plane, Light, time_it, default_plot_layout
 import raytracepy.core as core
+from .plane import TransmissionTypes
 
 
 class BaseList:
     def __init__(self, objs: Union[List[Plane], Plane, List[Light], Light]):
-        if not isinstance(objs, list):
-            objs = [objs]
-
-        self._objs = objs
+        self._objs = []
+        self.add(objs)
 
     def __repr__(self):
         return repr([obj.name for obj in self._objs])
@@ -24,28 +23,59 @@ class BaseList:
 
     def __getitem__(self, item: Union[str, int]):
         """
-
-        :param item:
-            int:
+        Parameters
+        ----------
+        item: Union[str, int]
+            int: index of item in list
             string: name of object
-        :return:
+
+        Returns
+        -------
+        output:
+
         """
         if isinstance(item, int):
             return self._objs[item]
         elif isinstance(item, str):
             obj = [obj for obj in self._objs if obj.name == item]
-            if len(obj) != 1:
+            if len(obj) == 0:
                 raise ValueError("Item not found.")
+            elif len(obj) >= 1:
+                raise ValueError("Multi-items found.")
             return obj[0]
         else:
             raise TypeError("Invalid Type. string or int only.")
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self._objs)
 
     def __iter__(self):
         for obj in self._objs:
             yield obj
+
+    def add(self, objs):
+        if not isinstance(objs, list):
+            objs = [objs]
+
+        for obj in objs:
+            if hasattr(obj, "name"):
+                for item in self:
+                    if obj.name == item.name:
+                        raise ValueError(f"'{obj.name}' name is already in use, or item was added twice.")
+
+            self._objs.append(obj)
+
+    def remove(self, objs):
+        if not isinstance(objs, list):
+            objs = [objs]
+
+        for obj in objs:
+            if isinstance(obj, str):
+                obj = [item for item in self._objs if item.name == obj]
+                if len(obj) != 1:
+                    raise ValueError("Item not found.")
+
+            self._objs.pop(obj)
 
 
 class RayTrace:
@@ -70,11 +100,8 @@ class RayTrace:
         self.bounce_max = bounce_max
         self.plane_matrix = None
 
-    def __str__(self):
-        return f"Simulation || run:{self._run} num_lights: {len(self.lights)}; num_planes: {len(self.planes)}"
-
     def __repr__(self):
-        return self.print_stats()
+        return f"Simulation || run:{self._run} num_lights: {len(self.lights)}; num_planes: {len(self.planes)}"
 
     # @property
     # def bounce_total(self):
@@ -89,9 +116,9 @@ class RayTrace:
         _date = datetime.datetime.now().strftime("%Y_%m_%d-%I_%M_%S_%p")
         file_name = f"{file_name}_{_date}"
         if _dir is not None:
-            file_name = _dir + r"//" + file_name
+            file_name = _dir + "\\" + file_name
 
-        with open(file_name + '.pickle', 'wb') as file:
+        with open(file_name + '.pickle', 'wb+') as file:
             pickle.dump(self, file)
 
     @staticmethod
@@ -171,6 +198,7 @@ class RayTrace:
             else:
                 plane.hits = np.vstack((plane.hits, hits[index_][:, :-1]))
 
+    # Stats ############################################################################################################
     def stats(self):
         """ Prints stats about simulation. """
         text = "\n"
@@ -180,24 +208,23 @@ class RayTrace:
         text += f"\nmax bounces: {self.bounce_max}"
         text += f"\nnumber of lights: {len(self.lights)}"
         text += f"\nnumber of planes: {len(self.planes)}"
+        print(text)
         for light in self.lights:
-            text += light.print_stats()
+            text += light.stats()
         for plane in self.planes:
-            text += plane.print_stats()
+            text += plane.stats()
 
         return text
 
-    def print_stats(self):
-        print(self.stats())
-
-    def plot_traces(self):
+    # Plotting #########################################################################################################
+    def plot_traces(self, plane_hits: Union[str, list[str]] = "all"):
         """ Create 3d plot of light ray traces. """
 
         fig = go.Figure()
         self._add_planes(fig)
         self._add_lights_3D(fig)
         self._add_ray_traces(fig)
-        self._add_hits(fig, num=self.lights[0].num_traces)
+        self._add_hits(fig, num=self.lights[0].num_traces, plane_hits=plane_hits)
 
         # default_plot_layout(fig)
         fig.write_html('temp.html', auto_open=True)
@@ -212,10 +239,10 @@ class RayTrace:
         _fill_level = 0
         for trace in light.traces:
             _bounce_count = int(trace[-1]) + 2  # 2 for start and end points
-            _out[_fill_level:_fill_level + _bounce_count, 0] = trace[:-1][0::3]   # x; get every 3rd one, don't want
+            _out[_fill_level:_fill_level + _bounce_count, 0] = trace[:-1][0::3][:_bounce_count]   # x; get every 3rd one, don't want
             # last point as its the bounce count
-            _out[_fill_level:_fill_level + _bounce_count, 1] = trace[1::3]  # y; get every 3rd one
-            _out[_fill_level:_fill_level + _bounce_count, 2] = trace[2::3]  # z; get every 3rd one
+            _out[_fill_level:_fill_level + _bounce_count, 1] = trace[1::3][:_bounce_count]  # y; get every 3rd one
+            _out[_fill_level:_fill_level + _bounce_count, 2] = trace[2::3][:_bounce_count]  # z; get every 3rd one
             _fill_level += _bounce_count + 1  # the plus one is to leave a NaN in between
 
         return _out
@@ -245,21 +272,28 @@ class RayTrace:
             kkwargs = kkwargs | kwargs
 
         for plane in self.planes:
-            #         alpha = 0.6
-            #         color = (0.5, 0.5, 0.5)
-            #         if plane.trans_type == 0:
-            #             alpha = 1
-            #             color = (0, 0, 1)
-            #         elif plane.trans_type == 1:
-            #             alpha = 0.2
-            #             color = (0, 0, 0)
+            alpha = 1
+            if plane.transmit_type == TransmissionTypes.transmit:
+                alpha = 0.4
+            elif plane.transmit_type == TransmissionTypes.reflect:
+                alpha = 0.2
             x, y, z = plane.plane_corner_xyz()
-            surf = go.Surface(x=x, y=y, z=z, name=plane.name, **kkwargs)
+            surf = go.Surface(x=x, y=y, z=z, name=plane.name, opacity=alpha,**kkwargs)
             fig.add_trace(surf)
 
-    def _add_hits(self, fig, num: int):
+    def _add_hits(self, fig, num: int, plane_hits: Union[str, list[str]] = "all",):
         """ Add hits on surface for traces. """
-        for plane in self.planes:
+        if plane_hits == "all":
+            for plane in self.planes:
+                hits = go.Scatter3d(x=plane.hits[:num, 0], y=plane.hits[:num, 1], z=plane.hits[:num, 2], mode="markers")
+                fig.add_trace(hits)
+            return
+
+        if isinstance(plane_hits, str):
+            plane_hits = [plane_hits]
+
+        for plane_name in plane_hits:
+            plane = self.planes[plane_name]
             hits = go.Scatter3d(x=plane.hits[:num, 0], y=plane.hits[:num, 1], z=plane.hits[:num, 2], mode="markers")
             fig.add_trace(hits)
 
@@ -285,7 +319,7 @@ class RayTrace:
                 w=[float(light.direction[2])],
                 name=light.name, **kkwargs)
             fig.add_trace(cone)
-            light.plot_add_rays(fig)
+            # light.plot_add_rays(fig)
 
     def _add_lights_2D(self, fig, **kwargs):
         """ Add lights to 2d plot. """
