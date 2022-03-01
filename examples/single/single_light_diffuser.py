@@ -21,9 +21,12 @@ def main():
         length=30,
         width=30,
         transmit_type="transmit",
+        transmit_func=3,
+        scatter_func=2
     )
 
-    planes = [ground, diffuser]
+    # Important note** ground should be last in list! RayTrace simulation evaluates ray hits in order of plane list
+    planes = [diffuser, ground]
 
     # define lights
     light = rpy.Light(
@@ -41,12 +44,17 @@ def main():
         bounce_max=1  # needs at least one bounce to make through the diffuser
     )
     sim.run()
-    sim.save_data()
+
+    file_name = "diffuser"
+    sim.save_data(file_name)
 
     # print stats
     sim.stats()
     ground.hit_stats()
     ground.hit_stats(True)
+
+    # plotting
+    sim.plot_report(file_name)
 
 
 if __name__ == "__main__":

@@ -5,9 +5,11 @@ import datetime
 import numpy as np
 import plotly.graph_objs as go
 
-from . import dtype, Plane, Light, time_it, default_plot_layout
+from . import dtype, Plane, Light, time_it, default_plot_layout, merge_html_figs
 import raytracepy.core as core
 from .plane import TransmissionTypes
+
+_figure_counter = 0
 
 
 class BaseList:
@@ -40,7 +42,7 @@ class BaseList:
             obj = [obj for obj in self._objs if obj.name == item]
             if len(obj) == 0:
                 raise ValueError("Item not found.")
-            elif len(obj) >= 1:
+            elif len(obj) > 1:
                 raise ValueError("Multi-items found.")
             return obj[0]
         else:
@@ -83,13 +85,23 @@ class RayTrace:
                  planes: Union[Plane, List[Plane]],
                  lights: Union[Light, List[Light]],
                  total_num_rays: int = 10_000,
-                 bounce_max: int = 0):
+                 bounce_max: int = 0
+                 ):
         """
+        Main raytrace, simulation class
 
-        :param planes:
-        :param lights:
-        :param total_num_rays:
-        :param bounce_max:
+        Parameters
+        ----------
+        planes: Union[Plane, list[Planes]
+            Planes
+        lights: Union[Light, List[Light]]
+            Lights
+        total_num_rays: int
+            total number of rays in simulation, It will be distributed among all lights based on power attribute
+        bounce_max: int
+            max number of bounces of a ray
+            diffuse scattering requires at least 1
+
         """
         self._run: bool = False
         self.planes = BaseList(planes)
@@ -111,7 +123,7 @@ class RayTrace:
     # def bounce_avg(self):
     #     return np.mean(self.traces[:, 0])
 
-    def save_data(self, _dir: str = None, file_name: str = "data"):
+    def save_data(self, file_name: str = "data", _dir: str = None):
         """ Save class in pickle format. """
         _date = datetime.datetime.now().strftime("%Y_%m_%d-%I_%M_%S_%p")
         file_name = f"{file_name}_{_date}"
@@ -199,7 +211,7 @@ class RayTrace:
                 plane.hits = np.vstack((plane.hits, hits[index_][:, :-1]))
 
     # Stats ############################################################################################################
-    def stats(self):
+    def stats(self, print_: bool = True):
         """ Prints stats about simulation. """
         text = "\n"
         text += f"Ray Trace Simulation Results (run: {self._run})"
@@ -208,17 +220,21 @@ class RayTrace:
         text += f"\nmax bounces: {self.bounce_max}"
         text += f"\nnumber of lights: {len(self.lights)}"
         text += f"\nnumber of planes: {len(self.planes)}"
-        print(text)
-        for light in self.lights:
-            text += light.stats()
-        for plane in self.planes:
-            text += plane.stats()
 
-        return text
+        if print_:
+            print(text)
+        else:
+            return text
+
+        for light in self.lights:
+            light.stats(print_)
+        for plane in self.planes:
+            plane.stats(print_)
 
     # Plotting #########################################################################################################
-    def plot_traces(self, plane_hits: Union[str, list[str]] = "all"):
+    def plot_traces(self, plane_hits: Union[str, list[str]] = "all", save_open: bool = True):
         """ Create 3d plot of light ray traces. """
+        global _figure_counter
 
         fig = go.Figure()
         self._add_planes(fig)
@@ -227,7 +243,10 @@ class RayTrace:
         self._add_hits(fig, num=self.lights[0].num_traces, plane_hits=plane_hits)
 
         # default_plot_layout(fig)
-        fig.write_html('temp.html', auto_open=True)
+        if save_open:
+            fig.write_html(f'traces3D{_figure_counter}.html', auto_open=True, include_plotlyjs='cdn')
+            _figure_counter += 1
+
         return fig
 
     @staticmethod
@@ -239,8 +258,8 @@ class RayTrace:
         _fill_level = 0
         for trace in light.traces:
             _bounce_count = int(trace[-1]) + 2  # 2 for start and end points
-            _out[_fill_level:_fill_level + _bounce_count, 0] = trace[:-1][0::3][:_bounce_count]   # x; get every 3rd one, don't want
-            # last point as its the bounce count
+            _out[_fill_level:_fill_level + _bounce_count, 0] = trace[:-1][0::3][:_bounce_count]  # x; get every 3rd one
+            # , don't want last point as its the bounce count
             _out[_fill_level:_fill_level + _bounce_count, 1] = trace[1::3][:_bounce_count]  # y; get every 3rd one
             _out[_fill_level:_fill_level + _bounce_count, 2] = trace[2::3][:_bounce_count]  # z; get every 3rd one
             _fill_level += _bounce_count + 1  # the plus one is to leave a NaN in between
@@ -251,7 +270,8 @@ class RayTrace:
         """ Add traces of rays to 3d plot. """
         kkwargs = {
             "connectgaps": False,
-            "line": dict(color='rgb(100,100,100)', width=2)
+            "line": dict(color='rgb(255,255,0)', width=2),
+            "opacity": 0.6
         }
         if kwargs:
             kkwargs = kkwargs | kwargs
@@ -278,7 +298,7 @@ class RayTrace:
             elif plane.transmit_type == TransmissionTypes.reflect:
                 alpha = 0.2
             x, y, z = plane.plane_corner_xyz()
-            surf = go.Surface(x=x, y=y, z=z, name=plane.name, opacity=alpha,**kkwargs)
+            surf = go.Surface(x=x, y=y, z=z, name=plane.name, opacity=alpha, **kkwargs)
             fig.add_trace(surf)
 
     def _add_hits(self, fig, num: int, plane_hits: Union[str, list[str]] = "all",):
@@ -294,7 +314,8 @@ class RayTrace:
 
         for plane_name in plane_hits:
             plane = self.planes[plane_name]
-            hits = go.Scatter3d(x=plane.hits[:num, 0], y=plane.hits[:num, 1], z=plane.hits[:num, 2], mode="markers")
+            hits = go.Scatter3d(x=plane.hits[:num, 0], y=plane.hits[:num, 1], z=plane.hits[:num, 2], mode="markers",
+                                marker=dict(color='rgb(184,109,51)', size=5), opacity=0.6)
             fig.add_trace(hits)
 
     def _add_lights_3D(self, fig, **kwargs):
@@ -370,4 +391,39 @@ class RayTrace:
                 **kwargs)
             fig.add_trace(cone)
         default_plot_layout(fig)
+        return fig
+
+    def plot_report(self, file_name: str = "report.html", auto_open: bool = True):
+        figs = [
+            self.plot_stats(auto_open=False),
+            self.plot_traces(plane_hits="ground", save_open=False)
+        ]
+        for plane in self.planes:
+            figs += plane.plot_report(auto_open=False, write=False)
+
+        merge_html_figs(figs, file_name, auto_open=auto_open)
+
+    def plot_stats(self, auto_open: bool = True):
+        fig = go.Figure()
+
+        text = self.stats(print_=False)
+        text = text.replace("\n", "<br>")
+        fig.add_annotation(text=text,
+                           xref="paper", yref="paper",
+                           x=0.5, y=0.9, showarrow=False)
+
+        fig.update_layout(title={
+            "text": f"<b>RayTrace Simulation</b>", "y": 0.9, "x": 0.5, "xanchor": "center", "yanchor": "top",
+            "font": {"size": 36}
+        },
+            width=900,
+            height=300,
+            xaxis={"visible": False},
+            yaxis={"visible": False},
+            plot_bgcolor="white"
+        )
+
+        if auto_open:
+            fig.write_html("table.html", auto_open=auto_open, include_plotlyjs="cdn")
+
         return fig

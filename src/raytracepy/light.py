@@ -91,13 +91,15 @@ class Light:
         return f"Light (uid: {self.uid})|| pos: {self.position}; dir: {self.direction}"
 
     # Stats ############################################################################################################
-    def stats(self) -> str:
+    def stats(self, print_: bool = True):
         text = "\n"
         text += f"Light: {self.name} ({self.uid})"
         text += f"\n\t pos: {self.position}, dir: {self.direction}"
         text += f"\n\t power: {self.power}, num_rays: {self.num_rays}"
-        print(text)
-        return text
+        if print_:
+            print(text)
+        else:
+            return text
 
     # Plotting #########################################################################################################
     @wraps(sphere_distribution)

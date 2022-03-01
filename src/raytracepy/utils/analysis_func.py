@@ -48,7 +48,8 @@ def hits_along_line(xy, line_point=np.array((0, 0)), line_angle: float = np.pi /
         x[i] = (bin_edges[i + 1] + bin_edges[i]) / 2
 
     if normalize:
-        hist = hist / np.max(hist)
+        if max_ := np.max(hist) != 0:
+            hist = hist / np.max(max_)
 
     return x, hist
 
@@ -85,11 +86,12 @@ def rdf(xy, bins: int = 20, range_: Tuple[float, float] = (0, 10), normalize: bo
 
     x = np.empty_like(hist, dtype="float64")
     for i in range(hist.size):
-        hist[i] = hist[i] / (np.pi * (bin_edges[i + 1]**2 - bin_edges[i]**2))
+        hist[i] = hist[i] / (np.pi * (bin_edges[i + 1] ** 2 - bin_edges[i] ** 2))
         x[i] = (bin_edges[i + 1] + bin_edges[i]) / 2
 
     if normalize:
-        hist = hist / np.max(hist)
+        if max_ := np.max(hist) != 0:
+            hist = hist / np.max(max_)
 
     return x, hist
 
@@ -131,7 +133,8 @@ def adf(xy: np.ndarray, bins: int = 20, range_: Tuple[float, float] = (0, 10), n
         x[i] = (bin_edges[i + 1] + bin_edges[i]) / 2
 
     if normalize:
-        hist = hist / np.max(hist)
+        if max_ := np.max(hist) != 0:
+            hist = hist / np.max(max_)
 
     return x, hist
 
@@ -162,10 +165,11 @@ def sphere_distribution(xyz: np.ndarray, bins: int = 20, normalize: bool = False
 
     x = np.empty_like(hist, dtype="float64")
     for i in range(hist.size):
-        hist[i] = hist[i] / (2*np.pi * (np.cos(bin_edges[i])-np.cos(bin_edges[i+1])))
+        hist[i] = hist[i] / (2 * np.pi * (np.cos(bin_edges[i]) - np.cos(bin_edges[i + 1])))
         x[i] = (bin_edges[i] + bin_edges[i + 1]) / 2
 
     if normalize:
-        hist = hist/np.max(hist)
+        if max_ := np.max(hist) != 0:
+            hist = hist / np.max(max_)
 
     return x, hist

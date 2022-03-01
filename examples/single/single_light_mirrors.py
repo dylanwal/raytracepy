@@ -12,9 +12,12 @@ def main():
         name="ground",
         position=np.array([0, 0, 0], dtype='float64'),
         normal=np.array([0, 0, 1], dtype='float64'),
-        length=10,
-        width=10)
-    box_dim = 15
+        length=15,
+        width=15,
+        transmit_type="absorb"
+    )
+
+    box_dim = 6
     mirror_left = rpy.Plane(
         name="mirror_left",
         position=np.array([-box_dim / 2, 0, box_dim / 2], dtype='float64'),
@@ -61,7 +64,8 @@ def main():
         reflect_func=6,
     )
 
-    planes = [ground, mirror_left, mirror_right, mirror_front, mirror_back, top]
+    # Important note** ground should be last in list! RayTrace simulation evaluates ray hits in order of plane list
+    planes = [mirror_left, mirror_right, mirror_front, mirror_back, top, ground]
 
     # define lights
     light = rpy.Light(
@@ -77,15 +81,20 @@ def main():
         planes=planes,
         lights=light,
         total_num_rays=5_000_000,
-        bounce_max=4
+        bounce_max=10
     )
     sim.run()
-    sim.save_data()
+
+    file_name = "mirror_narrow"
+    sim.save_data(file_name)
 
     # print stats
     sim.stats()
     ground.hit_stats()
     ground.hit_stats(True)
+
+    # plotting
+    sim.plot_report(file_name)
 
 
 if __name__ == "__main__":

@@ -84,7 +84,7 @@ def main():
 
     plot_format.add_plot_format(fig, x_axis="distance (cm)", y_axis="relative light flux")
 
-    fig.write_html("rdf.html", auto_open=True)
+    fig.write_html("rdf.html", auto_open=True, include_plotlyjs='cdn')
 
     # plotting rdf normalized
     fig = go.Figure()

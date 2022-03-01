@@ -48,7 +48,7 @@ def main():
                    marker=dict(color=colors[1], size=10), name="experiment"))
 
     plot_format.add_plot_format(fig, x_axis="angle (rad)", y_axis="normalized light flux")
-    fig.write_html("cosine.html", auto_open=True)
+    fig.write_html("cosine.html", auto_open=True, include_plotlyjs='cdn')
 
 
 if __name__ == '__main__':

@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from typing import Tuple
 from enum import Enum
 from functools import wraps
@@ -5,8 +6,9 @@ import inspect
 
 import numpy as np
 import plotly.graph_objs as go
+from plotly.subplots import make_subplots
 
-from . import get_object_uid, default_plot_layout, dtype
+from . import get_object_uid, default_plot_layout, dtype, merge_html_figs
 from .utils.sig_figs import sig_figs
 from .core import normalise
 from .utils.analysis_func import hits_along_line, rdf
@@ -14,9 +16,22 @@ from .utils.analysis_func import hits_along_line, rdf
 
 class TransmissionTypes(Enum):
     absorb = 0
-    transmit = 1
+    transmit = 1  # with scattering
     transmit_reflect = 2
     reflect = 3
+
+
+class OrientationTypes(Enum):
+    horizontal = 0
+    vertical_x = 1  # x doesn't change
+    vertical_y = 2  # y doesn't change
+
+
+@dataclass
+class Histogram:
+    values: np.ndarray
+    xedges: np.ndarray
+    yedges: np.ndarray
 
 
 class Plane:
@@ -110,6 +125,7 @@ class Plane:
         self.width = width
 
         self.corners = None
+        self.orientation = None
         self._calc_corner()
 
         self.transmit_type = TransmissionTypes[transmit_type]
@@ -131,9 +147,28 @@ class Plane:
     def histogram(self):
         # Calculate histogram
         if self._histogram is None or self._hist_update:
-            hist, xedges, yedges = np.histogram2d(x=self.hits[:, 0], y=self.hits[:, 1], bins=self.bins)
+            if self.orientation == OrientationTypes.vertical_y:
+                x = self.hits[:, 0]
+                y = self.hits[:, 2]
+                xedges = np.linspace(self.corners[0], self.corners[1], self.bins[0])
+                yedges = np.linspace(self.corners[4], self.corners[5], self.bins[1])
+
+            elif self.orientation == OrientationTypes.vertical_x:
+                x = self.hits[:, 1]
+                y = self.hits[:, 2]
+                xedges = np.linspace(self.corners[2], self.corners[3], self.bins[0])
+                yedges = np.linspace(self.corners[4], self.corners[5], self.bins[1])
+
+            else:  # self.orientation == OrientationTypes.horizontal:
+                x = self.hits[:, 0]
+                y = self.hits[:, 1]
+                xedges = np.linspace(self.corners[0], self.corners[1], self.bins[0])
+                yedges = np.linspace(self.corners[2], self.corners[3], self.bins[1])
+
+            hist, xedges, yedges = np.histogram2d(x=x, y=y, bins=[xedges, yedges])
+            self._histogram = Histogram(hist, xedges, yedges)
             self._hist_update = False
-            self._histogram = hist
+
         return self._histogram
 
     @property
@@ -151,16 +186,19 @@ class Plane:
             self.corners = np.array([self.position[0] - self.width / 2, self.position[0] + self.width / 2,
                                      self.position[1] - self.length / 2, self.position[1] + self.length / 2,
                                      self.position[2], self.position[2]], dtype="float64")
+            self.orientation = OrientationTypes.horizontal
         elif self.normal[0] == 0 and self.normal[2] == 0:
             self.corners = np.array([self.position[0] - self.width / 2, self.position[0] + self.width / 2,
                                      self.position[1], self.position[1],
                                      self.position[2] - self.width / 2, self.position[2] + self.width / 2],
                                     dtype="float64")
+            self.orientation = OrientationTypes.vertical_y
         elif self.normal[1] == 0 and self.normal[2] == 0:
             self.corners = np.array([self.position[0], self.position[0],
                                      self.position[1] - self.length / 2, self.position[1] + self.length / 2,
                                      self.position[2] - self.width / 2, self.position[2] + self.width / 2],
                                     dtype="float64")
+            self.orientation = OrientationTypes.vertical_x
         else:
             raise ValueError("non-vertical or -horizontal planes is currently not supported.")
 
@@ -212,17 +250,20 @@ class Plane:
         return xx, yy, zz
 
     # Stats ############################################################################################################
-    def stats(self) -> str:
+    def stats(self, print_: bool = True):
         """ general stats about plane"""
         text = "\n"
         text += f"Plane: {self.name} (uid: {self.uid})"
         text += f"\n\t pos: {self.position}, norm: {self.normal}"
         text += f"\n\t length: {self.length}, width: {self.width}"
         text += f"\n\t hits: {len(self.hits)}"
-        print(text)
-        return text
+        text += f"\n\t type: {self.transmit_type}"
+        if print_:
+            print(text)
+        else:
+            return text
 
-    def hit_stats(self, normalized: bool = False) -> str:
+    def hit_stats(self, normalized: bool = False, print_: bool = True):
         """ stats about the hits on the plane, (can be normalized to mean)."""
         data = self._hit_stats(normalized)
         s = [[str(e) for e in row] for row in data]
@@ -230,15 +271,20 @@ class Plane:
         fmt = '\t'.join('{{:{}}}'.format(x) for x in lens)
         table = [fmt.format(*row) for row in s]
         text = '\n'.join(table)
-        print(text)
-        return text
+        if print_:
+            print(text)
+        else:
+            return text
 
     def _hit_stats(self, normalized: bool = False):
         """ calculates hit stats. """
         headers = ["min", "1", "5", "10", "mean", "90", "95", "99", "max"]
-        his_array = np.reshape(self.histogram, (self.histogram.shape[0] * self.histogram.shape[1],))
+        his_array = np.reshape(self.histogram.values,
+                               (self.histogram.values.shape[0] * self.histogram.values.shape[1],))
         mean_ = float(np.mean(his_array))
-        if normalized:
+        if mean_ == 0:
+            data = [0] * 9
+        elif normalized:
             data = [sig_figs(np.min(his_array) / mean_),
                     sig_figs(np.percentile(his_array, 1) / mean_),
                     sig_figs(np.percentile(his_array, 5) / mean_),
@@ -262,13 +308,20 @@ class Plane:
         return [headers, data]
 
     # Plotting #########################################################################################################
-    def plot_heat_map(self):
+    def plot_heat_map(self, save_open: bool = True):
         """ Creates heatmap/2D histogram. """
-        fig = go.Figure(go.Heatmap(z=self.histogram))
-        default_plot_layout(fig)
+        # edges to center points
+        dx = abs(self.histogram.xedges[0] - self.histogram.xedges[1])
+        x = self.histogram.xedges[:-1] + dx / 2
+        dy = abs(self.histogram.yedges[0] - self.histogram.yedges[1])
+        y = self.histogram.yedges[:-1] + dy / 2
+
+        fig = go.Figure(go.Heatmap(z=self.histogram.values, x=x, y=y))
+        default_plot_layout(fig, save_open)
+
         return fig
 
-    def plot_sensor(self, xy: np.ndarray, r: float, normalize: bool = False, **kwargs):
+    def plot_sensor(self, xy: np.ndarray, r: float, normalize: bool = False, save_open: bool = True, **kwargs):
         z = self.shape_grid(xy, r)
         kkwargs = {
             "marker": dict(showscale=True, size=25, colorbar=dict(title="<b>counts</b>"))
@@ -281,17 +334,17 @@ class Plane:
         kkwargs = kkwargs | kwargs
         scatter = go.Scatter(x=xy[:, 0], y=xy[:, 1], mode='markers', marker_color=z, **kkwargs)
         fig = go.Figure(scatter)
-        default_plot_layout(fig)
+        default_plot_layout(fig, save_open)
         return fig
 
-    def plot_surface(self, kwargs: dict = None):
+    def plot_surface(self, save_open: bool = True, kwargs: dict = None):
         kkwargs = {}
         if kwargs is not None:
             kkwargs = kkwargs | kwargs
 
-        surf = go.Surface(z=self.hist, **kkwargs)
+        surf = go.Surface(z=self.histogram.values, **kkwargs)
         fig = go.Figure(surf)
-        default_plot_layout(fig)
+        default_plot_layout(fig, save_open)
         return fig
 
     def shape_grid(self, xy: np.ndarray, r: float = 1) -> np.ndarray:
@@ -333,10 +386,10 @@ class Plane:
         return int(np.sum(distance <= r, axis=0))
 
     @wraps(rdf)
-    def plot_rdf(self, **kwargs):
+    def plot_rdf(self, save_open: bool = True, **kwargs):
         fig = go.Figure()
         self.plot_add_rdf(fig, **kwargs)
-        default_plot_layout(fig)
+        default_plot_layout(fig, save_open)
 
         return fig
 
@@ -351,13 +404,25 @@ class Plane:
 
     @wraps(rdf)
     def rdf(self, **kwargs):
-        return rdf(self.hits, **kwargs)
+        if self.orientation == OrientationTypes.vertical_y:
+            x = self.hits[:, 0]
+            y = self.hits[:, 2]
+
+        elif self.orientation == OrientationTypes.vertical_x:
+            x = self.hits[:, 1]
+            y = self.hits[:, 2]
+
+        else:  # self.orientation == OrientationTypes.horizontal:
+            x = self.hits[:, 0]
+            y = self.hits[:, 1]
+
+        return rdf(np.column_stack((x, y)), **kwargs)
 
     @wraps(hits_along_line)
-    def plot_hits_line(self, **kwargs):
+    def plot_hits_line(self, save_open: bool = True, **kwargs):
         fig = go.Figure()
         self.plot_add_hits_line(fig, **kwargs)
-        default_plot_layout(fig)
+        default_plot_layout(fig, save_open)
 
         return fig
 
@@ -372,4 +437,84 @@ class Plane:
 
     @wraps(hits_along_line)
     def hits_along_line(self, **kwargs):
-        return hits_along_line(self.hits[:, :2], **kwargs)
+        if self.orientation == OrientationTypes.vertical_y:
+            x = self.hits[:, 0]
+            y = self.hits[:, 2]
+
+        elif self.orientation == OrientationTypes.vertical_x:
+            x = self.hits[:, 1]
+            y = self.hits[:, 2]
+
+        else:  # self.orientation == OrientationTypes.horizontal:
+            x = self.hits[:, 0]
+            y = self.hits[:, 1]
+
+        return hits_along_line(np.column_stack((x, y)), **kwargs)
+
+    def plot_report(self, file_name: str = "report.html", auto_open: bool = True, write: bool = True):
+        """ Generate html report. """
+        figs = [
+            self.plot_stats(auto_open=False),
+            self.plot_heat_map(save_open=False),
+            self.plot_rdf(bins=40, normalize=True, save_open=False),
+            self.plot_table(auto_open=False),
+            self.plot_table(normalized=True, auto_open=False)
+        ]
+
+        if write:
+            merge_html_figs(figs, file_name, auto_open=auto_open)
+        else:
+            return figs
+
+    def plot_table(self, normalized: bool = False, auto_open: bool = True) -> go.Figure:
+        """ Print hit tables in html"""
+        headers, data = self._hit_stats(normalized)
+
+        fig = go.Figure()
+        fig.add_table(
+            header=dict(values=headers),
+            cells=dict(values=data)
+        )
+
+        if normalized:
+            title = "Normalized"
+        else:
+            title = "Not Normalized"
+
+        fig.update_layout(title={
+            "text": f"<b>{title}</b>", "y": 0.9, "x": 0.5, "xanchor": "center", "yanchor": "top",
+            "font": {"size": 24}
+        },
+            width=900,
+            height=300,
+        )
+
+        if auto_open:
+            fig.write_html("table.html", auto_open=auto_open, include_plotlyjs="cdn")
+
+        return fig
+
+    def plot_stats(self, auto_open: bool = True):
+        fig = go.Figure()
+
+        text = self.stats(print_=False)
+        text = text.replace("\n", "<br>")
+        fig.add_annotation(text=text,
+                           xref="paper", yref="paper",
+                           x=0.5, y=0.9, showarrow=False)
+
+        fig.update_layout(title={
+            "text": f"<b>{self.name}</b>", "y": 0.9, "x": 0.5, "xanchor": "center", "yanchor": "top",
+            "font": {"size": 24}
+        },
+            width=900,
+            height=300,
+            xaxis={"visible": False},
+            yaxis={"visible": False},
+            plot_bgcolor="white"
+        )
+
+        if auto_open:
+            fig.write_html("table.html", auto_open=auto_open, include_plotlyjs="cdn")
+
+        return fig

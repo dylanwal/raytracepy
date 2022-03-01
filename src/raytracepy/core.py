@@ -10,9 +10,8 @@ Notes:
 """
 
 import numpy as np
-from numba import njit
 
-from . import dtype
+from . import dtype, njit
 from .light_plane_funcs import theta_func_selector, probability_func_selector
 
 
@@ -38,7 +37,7 @@ def create_rays(theta_func_id, direction,
 
 @njit(cache=True)
 def trace_rays(ray_pos: np.ndarray, ray_dir: np.ndarray, plane_matrix: np.ndarray,
-               bounce_max, traces: np.ndarray):
+               bounce_max: int, traces: np.ndarray):
     """
 
     :param ray_pos:
@@ -71,7 +70,7 @@ def trace_rays(ray_pos: np.ndarray, ray_dir: np.ndarray, plane_matrix: np.ndarra
                 break  # does not hit any planes
 
             if bounce < bounce_max:  # skip if no bounces left
-                angle = np.arcsin(np.dot(ray, plane[7:10]))  # calculate angle light hit plane
+                angle = np.sin(np.sqrt(ray[0]**2+ray[1]**2))  # calculate angle light hit plane
 
                 if 0 < plane[0] <= 2:  # if plane type allows transmitted light
                     # calculate probably of light transmitting given the angle.

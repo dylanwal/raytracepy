@@ -1,8 +1,8 @@
+import os
 dtype = "float64"
 
-from numba import config
+from numba import njit, config
 config.DISABLE_JIT = False
-
 
 from functools import wraps
 from time import time
@@ -28,7 +28,7 @@ def get_object_uid() -> int:
 
 
 _figure_counter: int = 0
-def default_plot_layout(fig, **kwargs):
+def default_plot_layout(fig, save_open: bool = True, **kwargs):
     global _figure_counter
     layout = {
         "autosize": False,
@@ -69,8 +69,38 @@ def default_plot_layout(fig, **kwargs):
     fig.update_layout(layout)
     fig.update_xaxes(xaxis)
     fig.update_yaxes(yaxis)
-    fig.write_html(f'temp{_figure_counter}.html', auto_open=True)  # fig.show()
-    _figure_counter += 1
+
+    if save_open:
+        fig.write_html(f'temp{_figure_counter}.html', auto_open=True, include_plotlyjs='cdn')  # fig.show()
+        _figure_counter += 1
+
+
+def merge_html_figs(figs, filename: str = "merge.html", auto_open: bool = True):
+    """
+    Merges plotly figures.
+
+    Parameters
+    ----------
+    figs: list[go.Figure]
+        list of figures to append together
+    filename:str
+        file name
+    auto_open: bool
+        open html in browser after creating
+
+    """
+    if filename[-5:] != ".html":
+        filename += ".html"
+
+    with open(filename, 'w') as file:
+        file.write("<html><head></head><body>" + "\n")
+        for fig in figs:
+            inner_html = fig.to_html(include_plotlyjs="cdn").split('<body>')[1].split('</body>')[0]
+            file.write(inner_html)
+        file.write("</body></html>" + "\n")
+
+    if auto_open:
+        os.system(fr"start {filename}")
 
 
 from .light_layouts import CirclePattern, GridPattern, OffsetGridPattern

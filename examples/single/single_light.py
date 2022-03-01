@@ -36,13 +36,17 @@ def main():
         total_num_rays=5_000_000
     )
     sim.run()
-    sim.save_data()
+
+    file_name = "single"
+    sim.save_data(file_name)
 
     # print stats
     sim.stats()
     ground.hit_stats()
     ground.hit_stats(True)
 
+    # plotting
+    sim.plot_report(file_name)
 
 if __name__ == "__main__":
     main()

@@ -73,7 +73,7 @@ def main():
         print(f"plot {i}/{len(sims) - 1} done")
 
     fig.update_layout(height=400 * rows, width=600 * cols, title_text="Heatmaps for Inverse Square Law")
-    fig.write_html("rdf_heatmap.html", auto_open=True)
+    fig.write_html("rdf_heatmap.html", auto_open=True, include_plotlyjs='cdn')
     print("done")
 
 
