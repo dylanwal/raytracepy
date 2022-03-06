@@ -30,4 +30,4 @@ np.savetxt("rdf_inverse.csv", rdf, delimiter=",")  # save result as csv
 
 # calculate hits within circle
 for sim in sims:
-    print(f"{sim.lights[0].position[2]},{sim.planes[0].hits_in_circle(np.array([0,0]), 0.2)}")
+    print(f"{sim.lights[0].position[2]},{sim.planes[0].hits_in_circle(np.array([0,0]), 0.1)}")

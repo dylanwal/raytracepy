@@ -14,10 +14,10 @@ def main():
         normal=np.array([0, 0, 1], dtype='float64'),
         length=15,
         width=15,
-        transmit_type="absorb"
+        transmit_type="absorb",
     )
 
-    box_dim = 6
+    box_dim = 15
     mirror_left = rpy.Plane(
         name="mirror_left",
         position=np.array([-box_dim / 2, 0, box_dim / 2], dtype='float64'),
@@ -81,11 +81,11 @@ def main():
         planes=planes,
         lights=light,
         total_num_rays=5_000_000,
-        bounce_max=10
+        bounce_max=20
     )
     sim.run()
 
-    file_name = "mirror_narrow"
+    file_name = "mirror_wide"
     sim.save_data(file_name)
 
     # print stats

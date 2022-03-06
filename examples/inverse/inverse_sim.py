@@ -31,7 +31,7 @@ def single_run(height: float):
     sim = rpy.RayTrace(
         planes=ground,
         lights=light,
-        total_num_rays=3_000_000
+        total_num_rays=5_000_000
     )
 
     # pass setup/ref_data object to the simulation; then run the simulation
@@ -43,8 +43,8 @@ def single_run(height: float):
 
 
 def main():
-    n = 5
-    height = np.linspace(1, 10, n)
+    n = 6
+    height = np.linspace(1, 16, n)
     for i in range(len(height)):
         sim = single_run(height[i])
         sim.save_data()
