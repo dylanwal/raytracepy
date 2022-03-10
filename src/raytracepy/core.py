@@ -40,12 +40,17 @@ def trace_rays(ray_pos: np.ndarray, ray_dir: np.ndarray, plane_matrix: np.ndarra
                bounce_max: int, traces: np.ndarray):
     """
 
-    :param ray_pos:
-    :param ray_dir:
-    :param plane_matrix:
-    :param bounce_max:
-    :param traces:
-    :return:
+    Parameters
+    ----------
+    ray_pos
+    ray_dir
+    plane_matrix
+    bounce_max
+    traces
+
+    Returns
+    -------
+
     """
     traces_counter = 0
     for i in range(ray_dir.shape[0]):  # Loop through each ray until it reaches max bounces or absorbs into surface.
@@ -60,8 +65,8 @@ def trace_rays(ray_pos: np.ndarray, ray_dir: np.ndarray, plane_matrix: np.ndarra
                                                             rays_pos=traces[traces_counter, bounce*3: 3+bounce*3],
                                                             plane_dir=plane[7:10], plane_pos=plane[4:7])
                     # check to see if the hit is within the bounds of the plane
-                    if intersect_cord is not None and check_in_plane_range(point=intersect_cord,
-                                                                           plane_corners=plane[10:]):
+                    if intersect_cord is not None and \
+                            check_in_plane_range(point=intersect_cord, plane_corners=plane[10:-1]):
                         plane_hit = plane[-1]
                         traces[traces_counter, 3+bounce*3: 6+bounce*3] = intersect_cord
                         traces[traces_counter, -1] = bounce
@@ -209,7 +214,7 @@ def plane_ray_intersection(rays_dir: np.ndarray, rays_pos: np.ndarray, plane_dir
     :return:
     """
     ndotu = np.dot(plane_dir, rays_dir)
-    if -1 * ndotu < 0.1:
+    if -1 * ndotu < 0.001:
         return None
         # print("No intersection; vector point away from surface.")
 

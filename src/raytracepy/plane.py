@@ -188,7 +188,7 @@ class Plane:
                                      self.position[2], self.position[2]], dtype="float64")
             self.orientation = OrientationTypes.horizontal
         elif self.normal[0] == 0 and self.normal[2] == 0:
-            self.corners = np.array([self.position[0] - self.width / 2, self.position[0] + self.width / 2,
+            self.corners = np.array([self.position[0] - self.length / 2, self.position[0] + self.length / 2,
                                      self.position[1], self.position[1],
                                      self.position[2] - self.width / 2, self.position[2] + self.width / 2],
                                     dtype="float64")
@@ -278,7 +278,7 @@ class Plane:
 
     def _hit_stats(self, normalized: bool = False):
         """ calculates hit stats. """
-        headers = ["min", "1", "5", "10", "mean", "90", "95", "99", "max"]
+        headers = ["min", "1", "5", "10", "mean", "std", "90", "95", "99", "max"]
         his_array = np.reshape(self.histogram.values,
                                (self.histogram.values.shape[0] * self.histogram.values.shape[1],))
         mean_ = float(np.mean(his_array))
@@ -290,6 +290,7 @@ class Plane:
                     sig_figs(np.percentile(his_array, 5) / mean_),
                     sig_figs(np.percentile(his_array, 10) / mean_),
                     sig_figs(mean_ / mean_),
+                    sig_figs(np.std(his_array) / mean_),
                     sig_figs(np.percentile(his_array, 90) / mean_),
                     sig_figs(np.percentile(his_array, 95) / mean_),
                     sig_figs(np.percentile(his_array, 99) / mean_),
@@ -300,6 +301,7 @@ class Plane:
                     sig_figs(np.percentile(his_array, 5)),
                     sig_figs(np.percentile(his_array, 10)),
                     sig_figs(mean_),
+                    sig_figs(np.std(his_array)),
                     sig_figs(np.percentile(his_array, 90)),
                     sig_figs(np.percentile(his_array, 95)),
                     sig_figs(np.percentile(his_array, 99)),
@@ -308,7 +310,7 @@ class Plane:
         return [headers, data]
 
     # Plotting #########################################################################################################
-    def plot_heat_map(self, save_open: bool = True):
+    def plot_heat_map(self, save_open: bool = True, colorbar_range: tuple = None):
         """ Creates heatmap/2D histogram. """
         # edges to center points
         dx = abs(self.histogram.xedges[0] - self.histogram.xedges[1])
@@ -317,6 +319,14 @@ class Plane:
         y = self.histogram.yedges[:-1] + dy / 2
 
         fig = go.Figure(go.Heatmap(z=self.histogram.values, x=x, y=y))
+
+        if colorbar_range is not None:
+            his_array = np.reshape(self.histogram.values,
+                                   (self.histogram.values.shape[0] * self.histogram.values.shape[1],))
+            fig.data[0].update(
+                zmin=np.percentile(his_array, colorbar_range[0]),
+                zmax=np.percentile(his_array, colorbar_range[1]))
+
         default_plot_layout(fig, save_open)
 
         return fig
@@ -324,17 +334,27 @@ class Plane:
     def plot_sensor(self, xy: np.ndarray, r: float, normalize: bool = False, save_open: bool = True, **kwargs):
         z = self.shape_grid(xy, r)
         kkwargs = {
-            "marker": dict(showscale=True, size=25, colorbar=dict(title="<b>counts</b>"))
+            "marker": dict(showscale=True, size=18, colorbar=dict(title="<b>counts</b>"))
         }
 
         if normalize:
-            kkwargs["marker"] = dict(showscale=True, size=25, colorbar=dict(title="<b>normalized<br>irradiance</b>"))
+            kkwargs["marker"] = dict(showscale=True, size=18,
+                                     colorbar=dict(
+                                         title={
+                                             "text": "<b>normalized<br>irradiance</b>",
+                                             "font": {
+                                                 "size": 18}})
+                                     )
             z = z / np.max(z)
+            # mask = z < 0.35
+            # z[mask] = 0.35
 
         kkwargs = kkwargs | kwargs
         scatter = go.Scatter(x=xy[:, 0], y=xy[:, 1], mode='markers', marker_color=z, **kkwargs)
         fig = go.Figure(scatter)
-        default_plot_layout(fig, save_open)
+        default_plot_layout(fig, save_open=False)
+        if save_open:
+            fig.write_html("radio.html", auto_open=True)
         return fig
 
     def plot_surface(self, save_open: bool = True, kwargs: dict = None):
@@ -451,15 +471,16 @@ class Plane:
 
         return hits_along_line(np.column_stack((x, y)), **kwargs)
 
-    def plot_report(self, file_name: str = "report.html", auto_open: bool = True, write: bool = True):
+    def plot_report(self, file_name: str = "report.html", auto_open: bool = True, write: bool = True,
+                    plot_rdf: bool =False):
         """ Generate html report. """
-        figs = [
-            self.plot_stats(auto_open=False),
-            self.plot_heat_map(save_open=False),
-            self.plot_rdf(bins=40, normalize=True, save_open=False),
-            self.plot_table(auto_open=False),
-            self.plot_table(normalized=True, auto_open=False)
-        ]
+        figs = []
+        figs.append(self.plot_stats(auto_open=False))
+        figs.append(self.plot_heat_map(save_open=False))
+        if plot_rdf:
+            figs.append(self.plot_rdf(bins=40, normalize=True, save_open=False))
+        figs.append(self.plot_table(auto_open=False))
+        figs.append(self.plot_table(normalized=True, auto_open=False))
 
         if write:
             merge_html_figs(figs, file_name, auto_open=auto_open)
@@ -468,13 +489,18 @@ class Plane:
 
     def plot_table(self, normalized: bool = False, auto_open: bool = True) -> go.Figure:
         """ Print hit tables in html"""
-        headers, data = self._hit_stats(normalized)
-
         fig = go.Figure()
-        fig.add_table(
-            header=dict(values=headers),
-            cells=dict(values=data)
-        )
+        text = self.hit_stats(normalized, print_=False)
+        text = text.replace("\n", "<br>")
+        text = text.replace("\t", "    ")
+        fig.add_annotation(text=text,
+                           xref="paper", yref="paper",
+                           x=0.5, y=0.9, showarrow=False)
+        # headers, data = self._hit_stats(normalized)
+        # fig.add_table(
+        #     header=dict(values=headers),
+        #     cells=dict(values=data)
+        # )
 
         if normalized:
             title = "Normalized"
@@ -486,7 +512,10 @@ class Plane:
             "font": {"size": 24}
         },
             width=900,
-            height=300,
+            height=200,
+            xaxis={"visible": False},
+            yaxis={"visible": False},
+            plot_bgcolor="white"
         )
 
         if auto_open:

@@ -103,3 +103,33 @@ y = np.asarray([
     0
 
 ], dtype="float64")
+
+
+def local_run():
+    import plotly.graph_objs as go
+    import raytracepy.ref_data.utils_ref_data as utils
+
+    global x
+    x = x / 180 * np.pi
+
+    # plot pdf
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(x=x, y=y, mode="lines"))
+    fig.write_html("temp.html", auto_open=True)
+
+    # create cdf
+    def func(x_):
+        return np.interp(x_, x, y)
+    x_cdf, y_cdf = utils.generate_cdf(func, npts=31, x_range=(-np.pi/2, np.pi/2))
+
+    # plot and print cdf
+    utils.print_cdf(x_cdf, y_cdf)
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(x=x_cdf, y=func(x_cdf), mode="lines", yaxis="y1"))
+    fig.add_trace(go.Scatter(x=x_cdf, y=y_cdf, mode="lines", yaxis="y2"))
+    fig.update_layout(yaxis2=dict(overlaying='y', side='right'))
+    fig.write_html("temp2.html", auto_open=True)
+
+
+if __name__ == "__main__":
+    local_run()

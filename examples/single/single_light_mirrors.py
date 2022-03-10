@@ -7,6 +7,15 @@ import numpy as np
 
 
 def main():
+    # define lights
+    height = 5
+    light = rpy.Light(
+        position=np.array([0, 0, height], dtype='float64'),
+        direction=np.array([0, 0, -1], dtype='float64'),
+        num_traces=100,
+        theta_func=0
+    )
+
     # define planes
     ground = rpy.Plane(
         name="ground",
@@ -56,7 +65,7 @@ def main():
     )
     top = rpy.Plane(
         name="top",
-        position=np.array([0, 0, box_dim], dtype='float64'),
+        position=np.array([0, 0, height], dtype='float64'),
         normal=np.array([0, 0, -1], dtype='float64'),
         length=box_dim,
         width=box_dim,
@@ -65,17 +74,8 @@ def main():
     )
 
     # Important note** ground should be last in list! RayTrace simulation evaluates ray hits in order of plane list
-    planes = [mirror_left, mirror_right, mirror_front, mirror_back, top, ground]
+    planes = [top, mirror_left, mirror_right, mirror_front, mirror_back, ground]
 
-    # define lights
-    light = rpy.Light(
-        position=np.array([0, 0, 5], dtype='float64'),
-        direction=np.array([0, 0, -1], dtype='float64'),
-        num_traces=100,
-        theta_func=0
-    )
-
-    # Create ref_data class
     # Create sim and run it
     sim = rpy.RayTrace(
         planes=planes,

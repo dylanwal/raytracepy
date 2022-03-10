@@ -183,7 +183,7 @@ class RayTrace:
 
             light.traces = light.traces[:-1, :]  # the last row could have bad data if it didn't hit a plane
             self._unpack_hits(hits)
-            print(f"Calculations for {i + 1}/{len(self.lights)} complete.")
+            # print(f"Calculations for {i + 1}/{len(self.lights)} complete.")
 
         self._run = True
 
@@ -271,14 +271,21 @@ class RayTrace:
         kkwargs = {
             "connectgaps": False,
             "line": dict(color='rgb(255,255,0)', width=2),
-            "opacity": 0.6
+            "opacity": 0.6,
+            "legendgroup": "traces",
+            "mode": 'lines'
         }
         if kwargs:
             kkwargs = kkwargs | kwargs
 
+        counter = 0
         for light in self.lights:
             xyz = self._get_trace_plot_data(light)
-            line = go.Scatter3d(x=xyz[:, 0], y=xyz[:, 1], z=xyz[:, 2], mode='lines', **kkwargs)
+            if counter == 0:
+                line = go.Scatter3d(x=xyz[:, 0], y=xyz[:, 1], z=xyz[:, 2], name="traces", **kkwargs)
+                counter += 1
+            else:
+                line = go.Scatter3d(x=xyz[:, 0], y=xyz[:, 1], z=xyz[:, 2], showlegend=False, **kkwargs)
             fig.add_trace(line)
 
     def _add_planes(self, fig, **kwargs):
@@ -325,20 +332,36 @@ class RayTrace:
             "showscale": False,
             "anchor": "tail",
             "sizeref": 1,
-            "colorscale": "Hot"
+            "colorscale": "Hot",
+            "legendgroup": "lights"
         }
         if kwargs:
             kkwargs = kkwargs | kwargs
 
+        counter = 0
         for light in self.lights:
-            cone = go.Cone(
-                x=[float(light.position[0])],
-                y=[float(light.position[1])],
-                z=[float(light.position[2])],
-                u=[float(light.direction[0])],
-                v=[float(light.direction[1])],
-                w=[float(light.direction[2])],
-                name=light.name, **kkwargs)
+            if counter == 0:
+                cone = go.Cone(
+                    x=[float(light.position[0])],
+                    y=[float(light.position[1])],
+                    z=[float(light.position[2])],
+                    u=[float(light.direction[0])],
+                    v=[float(light.direction[1])],
+                    w=[float(light.direction[2])],
+                    name="lights",
+                    showlegend=True,
+                    **kkwargs)
+                counter += 1
+            else:
+                cone = go.Cone(
+                    x=[float(light.position[0])],
+                    y=[float(light.position[1])],
+                    z=[float(light.position[2])],
+                    u=[float(light.direction[0])],
+                    v=[float(light.direction[1])],
+                    w=[float(light.direction[2])],
+                    showlegend=False,
+                    **kkwargs)
             fig.add_trace(cone)
             # light.plot_add_rays(fig)
 
@@ -393,14 +416,15 @@ class RayTrace:
         default_plot_layout(fig)
         return fig
 
-    def plot_report(self, file_name: str = "report.html", auto_open: bool = True):
+    def plot_report(self, file_name: str = "report.html", auto_open: bool = True, plot_rdf: bool = False):
         figs = [
             self.plot_stats(auto_open=False),
             self.plot_traces(plane_hits="ground", save_open=False)
         ]
         for plane in self.planes:
-            figs += plane.plot_report(auto_open=False, write=False)
+            figs += plane.plot_report(auto_open=False, write=False, plot_rdf=plot_rdf)
 
+        figs.append(self._plane_light_stats())
         merge_html_figs(figs, file_name, auto_open=auto_open)
 
     def plot_stats(self, auto_open: bool = True):
@@ -426,4 +450,25 @@ class RayTrace:
         if auto_open:
             fig.write_html("table.html", auto_open=auto_open, include_plotlyjs="cdn")
 
+        return fig
+
+    def _plane_light_stats(self):
+        text = ""
+        for light in self.lights:
+            text += light.stats(False)
+        text = text.replace("\n", "<br>")
+        fig = go.Figure()
+        fig.add_annotation(text=text,
+                           xref="paper", yref="paper",
+                           x=0.5, y=0.9, showarrow=False)
+        fig.update_layout(title={
+            "text": f"<b>Light data </b>", "y": 0.9, "x": 0.5, "xanchor": "center", "yanchor": "top",
+            "font": {"size": 24}
+        },
+            width=900,
+            height=70*len(self.lights),
+            xaxis={"visible": False},
+            yaxis={"visible": False},
+            plot_bgcolor="white"
+        )
         return fig

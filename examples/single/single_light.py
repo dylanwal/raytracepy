@@ -19,6 +19,7 @@ def main():
         normal=np.array([0, 0, 1], dtype='float64'),
         length=20,
         width=20,
+        bins=(100, 100)
     )
 
     # define lights
@@ -26,18 +27,18 @@ def main():
         position=np.array([0, 0, 5], dtype='float64'),
         direction=np.array([0, 0, -1], dtype='float64'),
         num_traces=100,
-        theta_func=0
+        theta_func=1
     )
 
     # Create sim and run it
     sim = rpy.RayTrace(
         planes=ground,
         lights=light,
-        total_num_rays=5_000_000
+        total_num_rays=10_000_000
     )
     sim.run()
 
-    file_name = "single"
+    file_name = "single_led"
     sim.save_data(file_name)
 
     # print stats

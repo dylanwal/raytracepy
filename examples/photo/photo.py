@@ -14,8 +14,8 @@ def run_single(h: float, grid):
         name="ground",
         position=np.array([0, 0, 0], dtype='float64'),
         normal=np.array([0, 0, 1], dtype='float64'),
-        length=10,
-        width=10,
+        length=15,
+        width=15,
         transmit_type="absorb",
         bins=(100, 100)
     )
@@ -43,47 +43,23 @@ def run_single(h: float, grid):
 
 
 def main_multi():
-    heights = [1, 2.33, 3.66, 5, 7.5, 10, 12.5, 15]   #  [1, 3, 5, 8, 10]
+    heights = [1, 2.5, 5, 7.5, 10]   #  [1, 3, 5, 8, 10]
     num_lights = 49  # [4, 16, 36, 49, 81]
     width = 12.5  # [7.5, 10, 12.5, 15]
 
     for h in heights:
-        # grid = rpy.CirclePattern(
-        #     center=np.array([0, 0]),
-        #     outer_radius=w/2,
-        #     layers=3,
-        #     num_points=num_lights)
-
         grid = rpy.OffsetGridPattern(
             center=np.array([0, 0]),
             x_length=width,
             y_length=width,
             num_points=num_lights)
 
-        # grid = rpy.GridPattern(
-        #     center=np.array([0, 0]),
-        #     x_length=width,
-        #     y_length=width,
-        #     num_points=n)
-
-        # grid = rpy.SpiralPattern(
-        #     center=np.array([0, 0]),
-        #     radius=width/2,
-        #     radius_start=.5,
-        #     velocity=0.2,
-        #     a_velocity=1,
-        #     num_points=n)
-
         sim = run_single(h=h, grid=grid)
-        file_name = f"no_mirror_h_{h}_90"
+        file_name = f"no_mirror_h_{h}"
         sim.plot_report(file_name)
+        sim.planes["ground"].hit_stats()
+        sim.planes["ground"].hit_stats(True)
         print(f"h_{h} done")
-
-    # for height in heights:
-    #     sim = run_single(h=height, grid=grid)
-    #     file_name = f"array_led_{height}cm"
-    #     sim.plot_report(file_name)
-    #     print(f"h={height} done")
 
 
 def main():

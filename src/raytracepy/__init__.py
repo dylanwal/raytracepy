@@ -1,7 +1,7 @@
 import os
 dtype = "float64"
 
-from numba import njit, config
+from numba import njit, config  # import all numba stuff here so it can be toggled on/off
 config.DISABLE_JIT = False
 
 from functools import wraps
@@ -103,9 +103,9 @@ def merge_html_figs(figs, filename: str = "merge.html", auto_open: bool = True):
         os.system(fr"start {filename}")
 
 
-from .light_layouts import CirclePattern, GridPattern, OffsetGridPattern
+from .light_layouts import CirclePattern, GridPattern, OffsetGridPattern, SpiralPattern
 from .light import Light
 from .plane import Plane
 from .raytrace import RayTrace
 
-__all__ = ["CirclePattern", "GridPattern", "OffsetGridPattern", "Light", "Plane", "RayTrace"]
+__all__ = ["CirclePattern", "GridPattern", "OffsetGridPattern", "SpiralPattern", "Light", "Plane", "RayTrace"]

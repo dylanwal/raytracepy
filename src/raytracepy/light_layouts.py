@@ -15,6 +15,14 @@ from . import dtype, default_plot_layout
 
 
 class PointPattern(ABC):
+    """
+
+    Attributes
+    ----------
+    xy_points: np.array([x_positions, y_positions])
+        x,y position of all points in the pattern
+
+    """
     number_type = dtype
 
     @property
@@ -43,20 +51,29 @@ class PointPattern(ABC):
 
 
 class CirclePattern(PointPattern):
-
+    """
+    See PointPattern for attributes
+    """
     def __init__(self,
                  center: np.ndarray = np.array([0, 0]),
-                 outer_radius: float = 10,
+                 outer_radius: (float, int) = 10,
                  num_points: int = 10,
                  layers: int = 1,
                  op_center: bool = True):
         """
 
-        :param center: Center of circle
-        :param outer_radius: Outer most ring size
-        :param num_points: number of points
-        :param layers:  number of rings or layers
-        :param op_center: Option to put a point on center
+        Parameters
+        ----------
+        center: np.ndarray[2]
+            Center of circle
+        outer_radius: int, float
+            Outer most ring size
+        num_points: int
+            number of points
+        layers: int
+            number of rings or layers
+        op_center: bool
+            Option to put a point on center
         """
         self.center = center
         self.outer_radius = outer_radius
@@ -134,33 +151,45 @@ class CirclePattern(PointPattern):
 
 
 class GridPattern(PointPattern):
-
+    """
+    See PointPattern for attributes
+    """
     def __init__(self,
                  center: np.ndarray = None,
                  corner: np.ndarray = None,
-                 x_length: float = 10,
-                 y_length: float = None,
+                 x_length: (int, float) = 10,
+                 y_length: (int, float) = None,
                  x_count: int = None,
                  y_count: int = None,
                  num_points: int = 25):
         """
         Generates x,y locations for a grid pattern
-        :param center: center of pattern (defualt is [0, 0]) (only give one center or corner)
-        :param corner: corner of pattern (only give one center or corner)
 
-        :param x_length: x span of the pattern
-        :param y_length: y span of the pattern (if not given, it will make square)
+        Parameters
+        ----------
+        center: np.ndarray[2]
+            center of pattern
+            default is [0, 0]
+            * only give one center or corner
+        corner: np.ndarray[2]
+            corner of pattern [x, y]
+            * only give one center or corner
+        x_length: int, float
+            x span of the pattern
+        y_length: int, float
+            y span of the pattern
+            * if not given, it will make square
+        x_count: int
+             number of rows (x-direction) in pattern
+             * if not provide sqrt(num_points) will be used
+        y_count: int
+            number of columns (y-direction) in pattern
+            * if not provide sqrt(num_points) will be used
+            * If offset_op=True, some layers will have "col-1" columns
+        num_points: int
+            number of points
+            * do not provide if col and row are provided
 
-
-        (do not provide if num_points are provided)
-        :param x_count: number of rows (x-direction) in pattern; * if not provide squt(num_points) will be used
-        :param y_count: number of columns (y-direction) in pattern; * if not provide squt(num_points) will be used
-        (If offset_op=True, some layers will be have "col-1" columns)
-
-        (do not provide if col and row are provided)
-        :param num_points: number of points
-
-        :return: np.array([x_positions, y_positions])
         """
         self.x_length = x_length
         if y_length is None:
@@ -221,12 +250,12 @@ class GridPattern(PointPattern):
             self.corner = self._center_to_corner(self.center, self.x_length, self.y_length)
 
     @staticmethod
-    def _center_to_corner(center: np.ndarray, x_length: float, y_length: float) -> np.ndarray:
+    def _center_to_corner(center: np.ndarray, x_length: (int, float), y_length: (int, float)) -> np.ndarray:
         """ Calculate the corner x,y position given the center. """
         return np.array([center[0] - x_length / 2, center[1] - y_length / 2], dtype=GridPattern.number_type)
 
     @staticmethod
-    def _corner_to_center(corner: np.ndarray, x_length: float, y_length: float) -> np.ndarray:
+    def _corner_to_center(corner: np.ndarray, x_length: (int, float), y_length: (int, float)) -> np.ndarray:
         """ Calculate the corner x,y position given the center. """
         return np.array([corner[0] + x_length / 2, corner[1] + y_length / 2], dtype=GridPattern.number_type)
 
@@ -252,33 +281,45 @@ class GridPattern(PointPattern):
 
 
 class OffsetGridPattern(PointPattern):
-
+    """
+    See PointPattern for attributes
+    """
     def __init__(self,
                  center: np.ndarray = None,
                  corner: np.ndarray = None,
-                 x_length: float = 10,
-                 y_length: float = None,
+                 x_length: (int, float) = 10,
+                 y_length: (int, float) = None,
                  x_count: int = None,
                  y_count: int = None,
                  num_points: int = 25):
         """
-        Generates x,y locations for a grid pattern
-        :param center: center of pattern (defualt is [0, 0]) (only give one center or corner)
-        :param corner: corner of pattern (only give one center or corner)
+        Generates x,y locations for a offset grid pattern
 
-        :param x_length: x span of the pattern
-        :param y_length: y span of the pattern (if not given, it will make square)
+        Parameters
+        ----------
+        center: np.ndarray[2]
+            center of pattern
+            default is [0, 0]
+            * only give one center or corner
+        corner: np.ndarray[2]
+            corner of pattern [x, y]
+            * only give one center or corner
+        x_length: int, float
+            x span of the pattern
+        y_length: int, float
+            y span of the pattern
+            * if not given, it will make square
+        x_count: int
+             number of rows (x-direction) in pattern
+             * if not provide sqrt(num_points) will be used
+        y_count: int
+            number of columns (y-direction) in pattern
+            * if not provide sqrt(num_points) will be used
+            * If offset_op=True, some layers will have "col-1" columns
+        num_points: int
+            number of points
+            * do not provide if col and row are provided
 
-
-        (do not provide if num_points are provided)
-        :param x_count: number of rows (x-direction) in pattern; * if not provide squt(num_points) will be used
-        :param y_count: number of columns (y-direction) in pattern; * if not provide squt(num_points) will be used
-        (If offset_op=True, some layers will be have "col-1" columns)
-
-        (do not provide if col and row are provided)
-        :param num_points: number of points
-
-        :return: np.array([x_positions, y_positions])
         """
         self.x_length = x_length
         if y_length is None:
@@ -354,12 +395,12 @@ class OffsetGridPattern(PointPattern):
             self.corner = self._center_to_corner(self.center, self.x_length, self.y_length)
 
     @staticmethod
-    def _center_to_corner(center: np.ndarray, x_length: float, y_length: float) -> np.ndarray:
+    def _center_to_corner(center: np.ndarray, x_length: (int, float), y_length: (int, float)) -> np.ndarray:
         """ Calculate the corner x,y position given the center. """
         return np.array([center[0] - x_length / 2, center[1] - y_length / 2], dtype=GridPattern.number_type)
 
     @staticmethod
-    def _corner_to_center(corner: np.ndarray, x_length: float, y_length: float) -> np.ndarray:
+    def _corner_to_center(corner: np.ndarray, x_length: (int, float), y_length: (int, float)) -> np.ndarray:
         """ Calculate the corner x,y position given the center. """
         return np.array([corner[0] + x_length / 2, corner[1] + y_length / 2], dtype=GridPattern.number_type)
 
@@ -400,4 +441,153 @@ class OffsetGridPattern(PointPattern):
                 ]
                 k += 1
 
-# Add spiral
+
+class SpiralPattern(PointPattern):
+    """
+    See PointPattern for attributes
+    """
+    def __init__(self,
+                 center: np.ndarray = None,
+                 radius: (int, float) = 10,
+                 radius_start: (int, float) = 0,
+                 velocity: (int, float) = 1,
+                 a_velocity: (int, float) = 1,
+                 num_points: int = 25):
+        """
+        Generates x,y locations for a grid pattern
+
+        Parameters
+        ----------
+        center: np.ndarray[2]
+            center of pattern
+            default is [0, 0]
+        radius: int, float
+            radius of the pattern
+        radius_start: int, float, np.ndarray
+            time starting point
+        velocity: int, float
+            velocity of spiral
+            * velocity + a_velocity control spacing
+        a_velocity: int, float
+            angular velocity of spiral
+            * velocity + a_velocity control spacing
+        num_points: int
+            number of points
+            * do not provide if col and row are provided
+
+        """
+
+        self.num_points = num_points
+        if center is None:
+            self.center = np.zeros(2, dtype=SpiralPattern.number_type)
+        else:
+            self.center = center
+        self.radius = radius
+        self.radius_start = radius_start
+        self.velocity = velocity
+        self.a_velocity = a_velocity
+
+        if radius_start == 0:
+            self.t_start = 0
+        else:
+            self.t_start = self._get_t_end(self.radius_start)
+
+        self.t_end: (int, float) = self._get_t_end(self.radius)
+
+        self._xy_points: np.ndarray = np.empty((self.num_points, 2), dtype=SpiralPattern.number_type)
+        self._get_points()
+
+    @property
+    def xy_points(self):
+        return self._xy_points
+
+    @staticmethod
+    def _spiral(t: (int, float, np.ndarray), v: float, w: float, c: np.ndarray) -> np.ndarray:
+        """
+        Cartesian Equation of spiral
+
+        Parameters
+        ----------
+        t: int, float, np.ndarray
+            time
+        v: int, float
+            velocity of spiral
+        w: int, float
+            angular velocity of spiral
+        c: np.ndarray[2]
+            [x,y] center
+
+        Returns
+        -------
+        output: np.ndarray
+            x,y position of spiral
+        """
+        x = (v * t + c[0]) * np.cos(w * t)
+        y = (v * t + c[1]) * np.sin(w * t)
+        return np.column_stack((x, y))
+
+    @staticmethod
+    def _spiral_length(t1: (int, float), t2: (int, float), v: (int, float), w: (int, float)) -> float:
+        """
+         Arc length of spiral between two points
+
+        Parameters
+        ----------
+        t1: int, float
+            start time
+        t2: int, float
+            end time
+        v: int, float
+            velocity of spiral
+        w: int, float
+            angular velocity of spiral
+
+        Returns
+        -------
+        length: float
+            arc length
+
+        """
+        def func(th: (int, float)):
+            return th * np.sqrt(1+th**2) + np.log(th + np.sqrt(1+th**2))
+
+        b = v/w
+        th1 = w * t1
+        th2 = w * t2
+        return b/2*(func(th2) - func(th1))
+
+    def _get_t_end(self, radius: (int, float)) -> (int, float):
+        """ Finds end time for spiral based on provided radius. """
+        from scipy.optimize import fsolve
+
+        # get t end point
+        def func(x):  # find were spiral equals radius
+            xy = self._spiral(x, self.velocity, self.a_velocity, self.center)
+            return radius - np.sqrt(xy[0, 0] ** 2 + xy[0, 1] ** 2)
+
+        result = fsolve(func, x0=np.array([1]))
+
+        if not np.isclose(func(result[0]), 0):
+            raise ValueError("Unable to find t_end of spiral.")
+
+        return result[0]
+
+    def _get_points(self):
+        """ Main function that calculates xy positions. """
+        from scipy.optimize import fsolve
+        # calc spiral length
+        length = self._spiral_length(self.t_start, self.t_end, self.velocity, self.a_velocity)
+
+        # distribute lights
+        span = length / (self.num_points - 1)
+        self._xy_points[0, :] = self._spiral(self.t_start, self.velocity, self.a_velocity, self.center)
+
+        t_0 = self.t_start
+        for i in range(1, self.num_points):
+            def func(x):  # find where span length equals span
+                span_length = self._spiral_length(t_0, x, self.velocity, self.a_velocity)
+                return span - span_length
+
+            result = fsolve(func, x0=t_0 + 0.01)
+            t_0 = result[0]
+            self._xy_points[i, :] = self._spiral(result[0], self.velocity, self.a_velocity, self.center)
