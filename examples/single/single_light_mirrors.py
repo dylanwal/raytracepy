@@ -65,11 +65,11 @@ def main():
     )
     top = rpy.Plane(
         name="top",
-        position=np.array([0, 0, height], dtype='float64'),
+        position=np.array([0, 0, height+0.01], dtype='float64'),
         normal=np.array([0, 0, -1], dtype='float64'),
         length=box_dim,
         width=box_dim,
-        transmit_type="reflect",
+        transmit_type="absorb",
         reflect_func=6,
     )
 
@@ -86,7 +86,7 @@ def main():
     sim.run()
 
     file_name = "mirror_wide"
-    sim.save_data(file_name)
+    # sim.save_data(file_name)
 
     # print stats
     sim.stats()

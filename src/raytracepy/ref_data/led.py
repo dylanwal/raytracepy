@@ -285,7 +285,7 @@ def local_run():
     # create cdf
     def func(x_):
         return np.interp(x_, x, y)
-    x_cdf, y_cdf = utils.generate_cdf(func, npts=31, x_range=(-np.pi, np.pi))
+    x_cdf, y_cdf = utils.generate_cdf(func, npts=31, x_range=(0, np.pi))
 
     # plot and print cdf
     utils.print_cdf(x_cdf, y_cdf)

@@ -27,7 +27,7 @@ def main():
         position=np.array([0, 0, 5], dtype='float64'),
         direction=np.array([0, 0, -1], dtype='float64'),
         num_traces=100,
-        theta_func=1
+        theta_func=0
     )
 
     # Create sim and run it
@@ -38,8 +38,8 @@ def main():
     )
     sim.run()
 
-    file_name = "single_led"
-    sim.save_data(file_name)
+    file_name = "single_uniform"
+    # sim.save_data(file_name)
 
     # print stats
     sim.stats()
@@ -48,6 +48,7 @@ def main():
 
     # plotting
     sim.plot_report(file_name)
+    print("hi")
 
 
 if __name__ == "__main__":

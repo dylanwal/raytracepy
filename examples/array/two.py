@@ -48,18 +48,18 @@ def main_multi():
     width = [7.5, 10, 12.5, 15]
 
     for w in width:
-        grid = rpy.CirclePattern(
+        # grid = rpy.CirclePattern(
+        #     center=np.array([0, 0]),
+        #     outer_radius=w/2,
+        #     layers=3,
+        #     num_points=num_lights)
+
+        grid = rpy.OffsetGridPattern(
             center=np.array([0, 0]),
-            outer_radius=w/2,
-            layers=3,
+            x_length=w,
+            y_length=w,
             num_points=num_lights)
 
-        # grid = rpy.OffsetGridPattern(
-        #     center=np.array([0, 0]),
-        #     x_length=w,
-        #     y_length=w,
-        #     num_points=num_lights)
-        #
         # grid = rpy.GridPattern(
         #     center=np.array([0, 0]),
         #     x_length=w,
@@ -75,7 +75,7 @@ def main_multi():
         #     num_points=num_lights)
 
         sim = run_single(h=height, grid=grid)
-        file_name = f"circle_w_{w}"
+        file_name = f"ogrid_w_{w}"
         sim.plot_report(file_name)
         print(f"n_{w} done")
 
