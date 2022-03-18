@@ -81,7 +81,7 @@ def merge_html_figs(figs, filename: str = "merge.html", auto_open: bool = True):
 
     Parameters
     ----------
-    figs: list[go.Figure]
+    figs: list[go.Figure, str]
         list of figures to append together
     filename:str
         file name
@@ -93,10 +93,15 @@ def merge_html_figs(figs, filename: str = "merge.html", auto_open: bool = True):
         filename += ".html"
 
     with open(filename, 'w') as file:
-        file.write("<html><head></head><body>" + "\n")
+        file.write(f"<html><head><title>{filename[:-5]}</title><h1>{filename[:-5]}</h1></head><body>" + "\n")
         for fig in figs:
+            if isinstance(fig, str):
+                file.write(fig)
+                continue
+
             inner_html = fig.to_html(include_plotlyjs="cdn").split('<body>')[1].split('</body>')[0]
             file.write(inner_html)
+
         file.write("</body></html>" + "\n")
 
     if auto_open:

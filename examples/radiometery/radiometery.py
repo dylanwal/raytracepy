@@ -93,7 +93,7 @@ def main():
 
     fig = sim.planes["ground"].plot_sensor(xy=xy, r=0.85, normalize=True, save_open=False)
     sim._add_lights_2D(fig)
-    box = rectangle_points_for_plotting(center=[0,0], x_length=10, y_length=10)
+    box = rectangle_points_for_plotting(center=[0, 0], x_length=10, y_length=10)
     fig.add_trace(
         go.Scatter(
             x=box[:, 0],

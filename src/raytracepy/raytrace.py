@@ -418,7 +418,7 @@ class RayTrace:
 
     def plot_report(self, file_name: str = "report.html", auto_open: bool = True, plot_rdf: bool = False):
         figs = [
-            self.plot_stats(auto_open=False),
+            self._html_stats(),
             self.plot_traces(plane_hits="ground", save_open=False)
         ]
         for plane in self.planes:
@@ -427,48 +427,21 @@ class RayTrace:
         figs.append(self._plane_light_stats())
         merge_html_figs(figs, file_name, auto_open=auto_open)
 
-    def plot_stats(self, auto_open: bool = True):
-        fig = go.Figure()
-
+    def _html_stats(self) -> str:
         text = self.stats(print_=False)
         text = text.replace("\n", "<br>")
-        fig.add_annotation(text=text,
-                           xref="paper", yref="paper",
-                           x=0.5, y=0.9, showarrow=False)
+        text = text.replace("\t", "    ")
 
-        fig.update_layout(title={
-            "text": f"<b>RayTrace Simulation</b>", "y": 0.9, "x": 0.5, "xanchor": "center", "yanchor": "top",
-            "font": {"size": 36}
-        },
-            width=900,
-            height=300,
-            xaxis={"visible": False},
-            yaxis={"visible": False},
-            plot_bgcolor="white"
-        )
+        return f"<h2><b>RayTrace Simulation</b></h2>" + "<p><pre>" + text + "</pre><p/>"
 
-        if auto_open:
-            fig.write_html("table.html", auto_open=auto_open, include_plotlyjs="cdn")
-
-        return fig
-
-    def _plane_light_stats(self):
+    def _plane_light_stats(self) -> str:
         text = ""
         for light in self.lights:
             text += light.stats(False)
+
         text = text.replace("\n", "<br>")
-        fig = go.Figure()
-        fig.add_annotation(text=text,
-                           xref="paper", yref="paper",
-                           x=0.5, y=0.9, showarrow=False)
-        fig.update_layout(title={
-            "text": f"<b>Light data </b>", "y": 0.9, "x": 0.5, "xanchor": "center", "yanchor": "top",
-            "font": {"size": 24}
-        },
-            width=900,
-            height=70*len(self.lights),
-            xaxis={"visible": False},
-            yaxis={"visible": False},
-            plot_bgcolor="white"
-        )
-        return fig
+        text = text.replace("\t", "    ")
+
+        return f"<h2> Light data</h2>" + "<p><pre>" + text + "</pre><p/>"
+
+

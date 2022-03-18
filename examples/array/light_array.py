@@ -43,23 +43,23 @@ def run_single(h: float, grid):
 
 
 def main_multi():
-    height = 5  # [1, 2.5, 5, 7.5, 10, 15]   #  [1, 3, 5, 8, 10]
+    height = [1, 2.5, 5, 7.5, 10, 12.5, 15]
     num_lights = 49  # [4, 16, 36, 49, 81]
-    width = [7.5, 10, 12.5, 15]
+    width = 12.5 # [7.5, 10, 12.5, 15]
 
-    for w in width:
-        grid = rpy.CirclePattern(
-            center=np.array([0, 0]),
-            outer_radius=w/2,
-            layers=3,
-            num_points=num_lights)
-
-        # grid = rpy.OffsetGridPattern(
+    for h in height:
+        # grid = rpy.CirclePattern(
         #     center=np.array([0, 0]),
-        #     x_length=w,
-        #     y_length=w,
+        #     outer_radius=w/2,
+        #     layers=3,
         #     num_points=num_lights)
         #
+        grid = rpy.OffsetGridPattern(
+            center=np.array([0, 0]),
+            x_length=width,
+            y_length=width,
+            num_points=num_lights)
+
         # grid = rpy.GridPattern(
         #     center=np.array([0, 0]),
         #     x_length=w,
@@ -74,10 +74,10 @@ def main_multi():
         #     a_velocity=1,
         #     num_points=num_lights)
 
-        sim = run_single(h=height, grid=grid)
-        file_name = f"circle_w_{w}"
+        sim = run_single(h=h, grid=grid)
+        file_name = f"ogrid_h_{h}cm"
         sim.plot_report(file_name)
-        print(f"n_{w} done")
+        print(f"n_{h} done")
 
     # for height in heights:
     #     sim = run_single(h=height, grid=grid)
@@ -107,5 +107,5 @@ def main():
 
 
 if __name__ == "__main__":
-    # main()
-    main_multi()
+    main()
+    # main_multi()

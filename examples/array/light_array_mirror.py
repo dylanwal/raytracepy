@@ -99,10 +99,10 @@ def run_single(h: float):
 
 
 def main_multi():
-    heights = [1, 2.33, 3.66, 5, 7.5, 10, 12.5, 15]
+    heights = [1, 2.5, 5, 7.5, 10, 12.5, 15]
     for height in heights:
         sim = run_single(h=height)
-        file_name = f"mirror_led_{height}cm_90"
+        file_name = f"ogrid_mirror_{height}cm"
         sim.plot_report(file_name)
         print(f"h={height} done")
 

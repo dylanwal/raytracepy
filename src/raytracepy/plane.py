@@ -6,7 +6,6 @@ import inspect
 
 import numpy as np
 import plotly.graph_objs as go
-from plotly.subplots import make_subplots
 
 from . import get_object_uid, default_plot_layout, dtype, merge_html_figs
 from .utils.sig_figs import sig_figs
@@ -472,78 +471,35 @@ class Plane:
         return hits_along_line(np.column_stack((x, y)), **kwargs)
 
     def plot_report(self, file_name: str = "report.html", auto_open: bool = True, write: bool = True,
-                    plot_rdf: bool =False):
+                    plot_rdf: bool = False):
         """ Generate html report. """
-        figs = []
-        figs.append(self.plot_stats(auto_open=False))
-        figs.append(self.plot_heat_map(save_open=False))
+        figs = [self.html_stats(), self.plot_heat_map(save_open=False)]
         if plot_rdf:
             figs.append(self.plot_rdf(bins=40, normalize=True, save_open=False))
-        figs.append(self.plot_table(auto_open=False))
-        figs.append(self.plot_table(normalized=True, auto_open=False))
+        figs.append(self.html_hit_stats())
+        figs.append(self.html_hit_stats(normalized=True))
 
         if write:
             merge_html_figs(figs, file_name, auto_open=auto_open)
         else:
             return figs
 
-    def plot_table(self, normalized: bool = False, auto_open: bool = True) -> go.Figure:
+    def html_hit_stats(self, normalized: bool = False) -> str:
         """ Print hit tables in html"""
-        fig = go.Figure()
         text = self.hit_stats(normalized, print_=False)
         text = text.replace("\n", "<br>")
         text = text.replace("\t", "    ")
-        fig.add_annotation(text=text,
-                           xref="paper", yref="paper",
-                           x=0.5, y=0.9, showarrow=False)
-        # headers, data = self._hit_stats(normalized)
-        # fig.add_table(
-        #     header=dict(values=headers),
-        #     cells=dict(values=data)
-        # )
 
         if normalized:
-            title = "Normalized"
+            out = "<h2>Normalized</h2>"
         else:
-            title = "Not Normalized"
+            out = "<h2>Not Normalized</h2>"
 
-        fig.update_layout(title={
-            "text": f"<b>{title}</b>", "y": 0.9, "x": 0.5, "xanchor": "center", "yanchor": "top",
-            "font": {"size": 24}
-        },
-            width=900,
-            height=200,
-            xaxis={"visible": False},
-            yaxis={"visible": False},
-            plot_bgcolor="white"
-        )
+        return out + "<p><pre>" + text + "</pre><p/>"
 
-        if auto_open:
-            fig.write_html("table.html", auto_open=auto_open, include_plotlyjs="cdn")
-
-        return fig
-
-    def plot_stats(self, auto_open: bool = True):
-        fig = go.Figure()
-
+    def html_stats(self) -> str:
         text = self.stats(print_=False)
         text = text.replace("\n", "<br>")
-        fig.add_annotation(text=text,
-                           xref="paper", yref="paper",
-                           x=0.5, y=0.9, showarrow=False)
+        text = text.replace("\t", "    ")
 
-        fig.update_layout(title={
-            "text": f"<b>{self.name}</b>", "y": 0.9, "x": 0.5, "xanchor": "center", "yanchor": "top",
-            "font": {"size": 24}
-        },
-            width=900,
-            height=300,
-            xaxis={"visible": False},
-            yaxis={"visible": False},
-            plot_bgcolor="white"
-        )
-
-        if auto_open:
-            fig.write_html("table.html", auto_open=auto_open, include_plotlyjs="cdn")
-
-        return fig
+        return f"<h2> Stats about {self.name}</h2>" + "<p><pre>" + text + "</pre><p/>"
