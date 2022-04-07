@@ -5,6 +5,8 @@ import numpy as np
 
 # Modules required for Dragonfly
 from argparse import Namespace
+
+import pandas as pd
 from dragonfly import load_config
 from dragonfly.exd.worker_manager import SyntheticWorkerManager
 
@@ -154,8 +156,8 @@ def simulation(params: np.ndarray, num_lights: int = 25, mirrors: bool = False, 
     histogram = sim.planes["ground"].histogram
     his_array = np.reshape(histogram.values,
                            (histogram.values.shape[0] * histogram.values.shape[1],))
-    mean_ = float(np.mean(his_array))/(sim.total_num_rays/ sim.planes["ground"].bins[0] ** 2)
-    std = 1 - np.std(his_array)/(sim.total_num_rays/ sim.planes["ground"].bins[0] ** 2)
+    mean_ = np.mean(his_array)  # /(sim.total_num_rays / sim.planes["ground"].bins[0] ** 2)
+    std = 100 - np.std(his_array)  # /(sim.total_num_rays/ sim.planes["ground"].bins[0] ** 2)
 
     if objective == "mean":
         return mean_
@@ -223,6 +225,12 @@ def single_objective(func: callable, config, init_expts: int = 8, max_expts: int
     return opt.history
 
 
+def calc_pareto_area(opt):
+    xy = np.array([[row[0], row[1]] for row in opt.curr_pareto_vals])
+    xy = xy[xy[:, 0].argsort()]
+    return np.trapz(x=xy[:, 0], y=xy[:, 1])
+
+
 def multi_objective(func: callable, config, init_expts: int = 8, max_expts: int = 30, args: dict = None):
     if args is None:
         args = {}
@@ -263,14 +271,22 @@ def multi_objective(func: callable, config, init_expts: int = 8, max_expts: int 
 
     # Refinement phase (algorithm proposes conditions that try to maximize objective)
     refine_expts = max_expts - init_expts
+    pareto_area = np.zeros(refine_expts)
     for j in range(refine_expts):
         opt._build_new_model()  # key line! update model using prior results
         opt._set_next_gp()  # key line! set next GP
         x = opt.ask()
         y = func(x, **args)
         opt.step_idx += 1
-        print("iter:", opt.step_idx, ", x:", x, ", y:", y)
         opt.tell([(x, y)])
+
+        area = calc_pareto_area(opt)
+        print("iter:", opt.step_idx, "area", area, "x:", x, ", y:", y)
+        area_cutoff = pareto_area[pareto_area.argsort()][-3]
+        if (area-area_cutoff)/area_cutoff <= 0.02:
+            print("area not changing")
+            break
+        pareto_area[j] = area
 
     return opt.history
 
@@ -299,8 +315,8 @@ def run():
     # Simulate
     # result = single_objective(func=simulation, config=config, init_expts=8, max_expts=10,
     #                  args={"mirrors": False, "num_lights": 9, "objective": "mean"})
-    result = multi_objective(func=simulation, config=config, init_expts=8, max_expts=30,
-                    args={"mirrors": False, "num_lights": 9, "objective": "multi"})
+    result = multi_objective(func=simulation, config=config, init_expts=6, max_expts=30,
+                    args={"mirrors": False, "num_lights": 25, "objective": "multi"})
 
     # save results
     save_data(result, "result")
@@ -308,5 +324,26 @@ def run():
     print("done")
 
 
+def grid_search():
+    grid_type = ['circle', 'ogrid', 'grid', 'spiral']
+    light_height = [0.5, 3.3, 6.6, 10]
+    light_width = [5, 10, 15, 20]
+
+    temp = np.zeros((4*4*4, 5))
+    df = pd.DataFrame(temp, columns=["height", "width", "pattern", "mean", "std"])
+
+    i = 0
+    for grid in grid_type:
+        for width in light_width:
+            for height in light_height:
+                mean, std = simulation(params=[grid, height, width], objective="multi")
+                df.iloc[i] = [height, width, grid, mean, std]
+                i += 1
+
+    print(df.head())
+    df.to_csv("grid_search.csv")
+
+
 if __name__ == "__main__":
-    run()
+    # run()
+    grid_search()
