@@ -1,26 +1,23 @@
+import itertools
 import pickle
 import datetime
 
 import numpy as np
+import pandas as pd
 
 # Modules required for Dragonfly
 from argparse import Namespace
-
-import pandas as pd
 from dragonfly import load_config
 from dragonfly.exd.worker_manager import SyntheticWorkerManager
-
 from dragonfly.exd.experiment_caller import CPFunctionCaller, CPMultiFunctionCaller
-from dragonfly.opt.gp_bandit import CPGPBandit  # for single-objective
 from dragonfly.opt.multiobjective_gp_bandit import CPMultiObjectiveGPBandit  # for multi-objective
 
 import raytracepy as rpy
 
 
-def run_single(lights, mirrors: bool = False, height: float = 10, width: float = 10):
+def run_single(lights, mirrors: bool = False, height: float = 10, width: float = 10, box_offset: float = 0.5, **kwargs):
     # define planes
     if mirrors:
-        # define planes
         ground = rpy.Plane(
             name="ground",
             position=np.array([0, 0, 0], dtype='float64'),
@@ -31,7 +28,7 @@ def run_single(lights, mirrors: bool = False, height: float = 10, width: float =
             bins=(100, 100)
         )
 
-        box_dim = width + 0.5
+        box_dim = width + box_offset
         box_height = height + 0.25
         mirror_left = rpy.Plane(
             name="mirror_left",
@@ -97,17 +94,14 @@ def run_single(lights, mirrors: bool = False, height: float = 10, width: float =
         planes=planes,
         lights=lights,
         total_num_rays=500_000,
+        bounce_max=5,
     )
     sim.run()
     return sim
 
 
-def define_lights(params, num_lights: int = 25) -> list[rpy.Light]:
-    grid_type = params[0]
-    height = params[1]
-    width = params[2]
-
-    # grid
+def define_lights(grid_type: str = "ogrid", height: float = 5, width: float = 10, num_lights: int = 25, **kwargs) \
+        -> list[rpy.Light]:
     if grid_type == "circle":
         grid = rpy.CirclePattern(
             center=np.array([0, 0]),
@@ -150,79 +144,23 @@ def define_lights(params, num_lights: int = 25) -> list[rpy.Light]:
     return lights
 
 
-def simulation(params: np.ndarray, num_lights: int = 25, mirrors: bool = False, objective: str = "mean"):
-    lights = define_lights(params, num_lights)
-    sim = run_single(lights, mirrors)
+def simulation(params, domain_vars: list[dict], num_lights: int = 25, mirrors: bool = False, **kwargs):
+    # parse params
+    params = {name["name"]: value for value, name in zip(params, domain_vars)}
+    params = params | kwargs
+
+    # run simulation
+    lights = define_lights(num_lights=num_lights, **params)
+    sim = run_single(lights, mirrors, **params)
+
+    # calculate dependent parameters
     histogram = sim.planes["ground"].histogram
     his_array = np.reshape(histogram.values,
                            (histogram.values.shape[0] * histogram.values.shape[1],))
     mean_ = np.mean(his_array)  # /(sim.total_num_rays / sim.planes["ground"].bins[0] ** 2)
     std = 100 - np.std(his_array)  # /(sim.total_num_rays/ sim.planes["ground"].bins[0] ** 2)
 
-    if objective == "mean":
-        return mean_
-    elif objective == "std":
-        return std
-    elif objective == "multi":
-        return mean_, std
-    else:
-        raise ValueError(f"{objective} invalid option")
-
-
-def single_objective(func: callable, config, init_expts: int = 8, max_expts: int = 30, args: dict = None):
-    """
-
-    Parameters
-    ----------
-    init_expts
-    max_expts
-    func
-    args
-
-    Returns
-    -------
-
-    """
-    if args is None:
-        args = {}
-
-    # Customizable algorithm settings
-    options = Namespace(
-        # batch size (number of new experiments you want to query at each iteration)
-        build_new_model_every=1,
-        # number of initialization experiments (-1 is included since Dragonfly generates n+1 expts)
-        init_capital=init_expts - 1,
-        # Criterion for tuning GP hyperparameters. Options: 'ml' (works well for smooth surfaces), 'post_sampling',
-        # or 'ml-post_sampling' (algorithm default).
-        gpb_hp_tune_criterion='ml',
-    )
-
-    # Create optimizer object
-    func_caller = CPFunctionCaller(None, config.domain, domain_orderings=config.domain_orderings)
-    opt = CPGPBandit(func_caller, 'default', ask_tell_mode=True, options=options)
-    opt.initialise()  # this generates initialization points
-
-    # Initialization phase (initial LHS space-filling design)
-    for j in range(init_expts):
-        x = opt.ask()  # get point to evaluate
-        y = func(x, **args)  # simulate reaction
-        opt.step_idx += 1  # increment experiment number
-        print("iter:", opt.step_idx, ", x:", x, ", y:", y)
-        opt.tell([(x, y)])  # return result to algorithm
-
-    # Refinement phase (algorithm proposes conditions that try to maximize objective)
-    refine_expts = max_expts - init_expts
-    for j in range(refine_expts):
-        # opt._build_new_model()  # key line! update model using prior results
-        # opt._set_next_gp()  # key line! set next GP
-        x = opt.ask()
-        y = func(x, **args)
-        opt.step_idx += 1
-        print("iter:", opt.step_idx, ", x:", x, ", y:", y)
-        opt.tell([(x, y)])
-
-    # Plot (results are contained within opt.history.query_true_vals and opt.history.query_points)
-    return opt.history
+    return mean_, std
 
 
 def calc_pareto_area(opt):
@@ -308,15 +246,14 @@ def run():
         {'name': 'grid_type', 'type': 'discrete', 'items': ['circle', 'ogrid', 'grid', 'spiral']},
         {"name": "light_height", "type": "float", "min": 0.5, "max": 10},
         {"name": "light_width", "type": "float", "min": 5, "max": 20},
+        # {"name": "box_offset", "type": "float", "min": 0.1, "max": 5}
     ]
     # Create domain
     config = load_config({'domain': domain_vars})
 
     # Simulate
-    # result = single_objective(func=simulation, config=config, init_expts=8, max_expts=10,
-    #                  args={"mirrors": False, "num_lights": 9, "objective": "mean"})
     result = multi_objective(func=simulation, config=config, init_expts=6, max_expts=30,
-                    args={"mirrors": False, "num_lights": 25, "objective": "multi"})
+                    args={"mirrors": False, "num_lights": 25, "objective": "multi", "domain_vars": domain_vars})
 
     # save results
     save_data(result, "result")
@@ -325,25 +262,44 @@ def run():
 
 
 def grid_search():
-    grid_type = ['circle', 'ogrid', 'grid', 'spiral']
-    light_height = [0.5, 3.3, 6.6, 10]
-    light_width = [5, 10, 15, 20]
+    n = 5
+    domain_vars = [
+        {'name': 'grid_type', 'type': 'discrete', 'items': ['circle', 'ogrid', 'grid', 'spiral']},
+        {"name": "light_height", "type": "float", "min": 0.5, "max": 10},
+        {"name": "light_width", "type": "float", "min": 5, "max": 20},
+        {"name": "box_offset", "type": "float", "min": 0.1, "max": 5}
+    ]
 
-    temp = np.zeros((4*4*4, 5))
-    df = pd.DataFrame(temp, columns=["height", "width", "pattern", "mean", "std"])
+    combinations = []
+    for var_ in domain_vars:
+        if var_["type"] == "discrete":
+            combinations.append(var_["items"])
+        else:
+            combinations.append(list(np.linspace(var_["min"], var_["max"], n)))
 
-    i = 0
-    for grid in grid_type:
-        for width in light_width:
-            for height in light_height:
-                mean, std = simulation(params=[grid, height, width], objective="multi")
-                df.iloc[i] = [height, width, grid, mean, std]
-                i += 1
+    all_combinations = list(itertools.product(*combinations))
 
+    temp = np.zeros((len(all_combinations), 2))
+    df_output = pd.DataFrame(temp, columns=["mean", "std"])
+    df = pd.DataFrame(all_combinations, columns=[var_["name"] for var_ in domain_vars])
+
+    for i, row in df.iterrows():
+        mean, std = simulation(list(row.values), domain_vars=domain_vars, mirrors=True)
+        df_output.iloc[i] = [mean, std]
+        print(i, "out of", len(all_combinations))
+
+    # from multiprocessing import Pool
+    # kwargs = {"domain_vars": domain_vars, "mirrors": True}
+    # from functools import partial
+    # with Pool(3) as p:
+    #     output = p.map(partial(simulation, **kwargs), all_combinations)
+
+    df = pd.concat([df, df_output], axis=1)
     print(df.head())
-    df.to_csv("grid_search.csv")
+    df.to_csv("grid_search_mirror.csv")
 
 
 if __name__ == "__main__":
     # run()
     grid_search()
+

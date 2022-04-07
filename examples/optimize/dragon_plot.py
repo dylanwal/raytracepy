@@ -9,7 +9,6 @@ import scipy.spatial
 
 import results_html
 
-
 colors = {
     "circle": "red",
     "ogrid": "blue",
@@ -17,21 +16,19 @@ colors = {
     "spiral": "purple"
 }
 
-
-#
-df_grid = pd.read_csv("grid_search.csv")
+# search
+df_grid = pd.read_csv("grid_search_mirror.csv")
 new_col = []
-for pattern in df_grid["pattern"]:
-    new_col.append(colors[pattern])
+for grid_type in df_grid["grid_type"]:
+    new_col.append(colors[grid_type])
 df_grid['colors'] = pd.Series(new_col, index=df_grid.index)
-
 
 hull_points = df_grid[["mean", "std"]].to_numpy()
 hull = scipy.spatial.ConvexHull(hull_points)
-hull_xy = np.array([hull_points[hull.vertices,0], hull_points[hull.vertices,1]])
+hull_xy = np.array([hull_points[hull.vertices, 0], hull_points[hull.vertices, 1]])
 
 # Load data
-with open("result_2022_04_06-10_09_02_PM.pickle", 'rb') as file:
+with open("result_2022_04_07-10_06_18_AM.pickle", 'rb') as file:
     results = pickle.load(file)
 
 
@@ -51,20 +48,17 @@ pareto_vals_sort = pareto_vals_sort[pareto_vals_sort[:, 0].argsort()]
 all_points = results.query_points
 all_vals = np.array(results.query_vals)
 
-df_all = pd.DataFrame(results_to_df(all_points, all_vals), columns=["height", "width", "pattern", "mean", "std"])
-
+df_all = pd.DataFrame(results_to_df(all_points, all_vals), columns=["light_height", "light_width", "grid_type", "mean", "std"])
 
 new_col = []
-for pattern in df_all["pattern"]:
-    new_col.append(colors[pattern])
+for grid_type in df_all["grid_type"]:
+    new_col.append(colors[grid_type])
 df_all['colors'] = pd.Series(new_col, index=df_all.index)
 
-
-
 #########################################################
 #########################################################
-fig_control = go.Figure(px.scatter(df_grid, x="mean", y="std", color="pattern",
-                           hover_data=["height", "width", "pattern", "mean", "std"]))
+fig_control = go.Figure(px.scatter(df_grid, x="mean", y="std", color="colors",
+                                   hover_data=["light_height", "light_width", "grid_type", "mean", "std"]))
 fig_control.add_trace(go.Scatter(x=hull_xy[0, :], y=hull_xy[1, :], mode="lines", name="control_hull"))
 
 layout = {
@@ -111,8 +105,8 @@ fig_control.update_yaxes(yaxis)
 #########################################################
 #########################################################
 #########################################################
-fig = go.Figure(px.scatter(df_all, x="mean", y="std", color="pattern",
-                           hover_data=["height", "width", "pattern", "mean", "std"]))
+fig = go.Figure(px.scatter(df_all, x="mean", y="std", color="colors",
+                           hover_data=["light_height", "light_width", "grid_type", "mean", "std"]))
 fig.add_trace(go.Scatter(x=pareto_vals_sort[:, 0], y=pareto_vals_sort[:, 1], mode="lines", showlegend=False))
 fig.add_trace(go.Scatter(x=df_grid["mean"], y=df_grid["std"], mode="markers", name="control"))
 fig.add_trace(go.Scatter(x=hull_xy[0, :], y=hull_xy[1, :], mode="lines", name="control_hull"))
@@ -157,8 +151,6 @@ fig.update_layout(layout)
 fig.update_xaxes(xaxis)
 fig.update_yaxes(yaxis)
 
-
-
 #########################################################
 #########################################################
 
@@ -173,9 +165,9 @@ fig_grid = ff.create_scatterplotmatrix(df_all, diag='box', index='colors',
 #########################################################
 
 fig_control_grid = ff.create_scatterplotmatrix(df_grid, diag='box', index='colors',
-                                       colormap_type='cat',
-                                       height=1200, width=1200
-                                       )
+                                               colormap_type='cat',
+                                               height=1200, width=1200
+                                               )
 
 #######################################################
 #######################################################
