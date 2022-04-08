@@ -17,13 +17,21 @@ colors = {
 }
 
 # search
-df_grid = pd.read_csv("grid_search_mirror.csv")
+df_grid = pd.read_csv("grid_search_mirror_49.csv", index_col=0)
+# add color column
 new_col = []
 for grid_type in df_grid["grid_type"]:
     new_col.append(colors[grid_type])
 df_grid['colors'] = pd.Series(new_col, index=df_grid.index)
+# add std_fix
+new_col = []
+for std in df_grid["std"]:
+    new_col.append(100-std)
+df_grid['std_fix'] = pd.Series(new_col, index=df_grid.index)
 
-hull_points = df_grid[["mean", "std"]].to_numpy()
+df_grid["mean"][df_grid.grid_type=="ogrid"] = df_grid["mean"][df_grid.grid_type=="ogrid"] * 25/23
+
+hull_points = df_grid[["mean", "std_fix"]].to_numpy()
 hull = scipy.spatial.ConvexHull(hull_points)
 hull_xy = np.array([hull_points[hull.vertices, 0], hull_points[hull.vertices, 1]])
 
@@ -57,8 +65,8 @@ df_all['colors'] = pd.Series(new_col, index=df_all.index)
 
 #########################################################
 #########################################################
-fig_control = go.Figure(px.scatter(df_grid, x="mean", y="std", color="colors",
-                                   hover_data=["light_height", "light_width", "grid_type", "mean", "std"]))
+fig_control = go.Figure(px.scatter(df_grid, x="mean", y="std_fix", color="grid_type",
+                                   hover_data=["light_height", "light_width", "grid_type", "mean", "std_fix"]))
 fig_control.add_trace(go.Scatter(x=hull_xy[0, :], y=hull_xy[1, :], mode="lines", name="control_hull"))
 
 layout = {
@@ -105,7 +113,7 @@ fig_control.update_yaxes(yaxis)
 #########################################################
 #########################################################
 #########################################################
-fig = go.Figure(px.scatter(df_all, x="mean", y="std", color="colors",
+fig = go.Figure(px.scatter(df_all, x="mean", y="std", color="grid_type",
                            hover_data=["light_height", "light_width", "grid_type", "mean", "std"]))
 fig.add_trace(go.Scatter(x=pareto_vals_sort[:, 0], y=pareto_vals_sort[:, 1], mode="lines", showlegend=False))
 fig.add_trace(go.Scatter(x=df_grid["mean"], y=df_grid["std"], mode="markers", name="control"))

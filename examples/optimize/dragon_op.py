@@ -15,20 +15,26 @@ from dragonfly.opt.multiobjective_gp_bandit import CPMultiObjectiveGPBandit  # f
 import raytracepy as rpy
 
 
-def run_single(lights, mirrors: bool = False, height: float = 10, width: float = 10, box_offset: float = 0.5, **kwargs):
+def run_single(lights, mirrors: bool = False, length: float = 10, width: float = 10, **kwargs):
     # define planes
     if mirrors:
         ground = rpy.Plane(
             name="ground",
             position=np.array([0, 0, 0], dtype='float64'),
             normal=np.array([0, 0, 1], dtype='float64'),
-            length=10,
-            width=10,
+            length=length,
+            width=width,
             transmit_type="absorb",
             bins=(100, 100)
         )
 
-        box_dim = width + box_offset
+        if 'light_width' in kwargs and "box_offset" in kwargs:
+            # mirror box can't be smaller than the area of interest
+            box_dim = max([width, kwargs["light_width"] + kwargs["box_offset"]])
+        else:
+            box_dim = width
+
+        height = lights[0].position[2]
         box_height = height + 0.25
         mirror_left = rpy.Plane(
             name="mirror_left",
@@ -100,34 +106,34 @@ def run_single(lights, mirrors: bool = False, height: float = 10, width: float =
     return sim
 
 
-def define_lights(grid_type: str = "ogrid", height: float = 5, width: float = 10, num_lights: int = 25, **kwargs) \
+def define_lights(grid_type: str = "ogrid", light_height: float = 5, light_width: float = 10, number_lights: int = 25, **kwargs) \
         -> list[rpy.Light]:
     if grid_type == "circle":
         grid = rpy.CirclePattern(
             center=np.array([0, 0]),
-            outer_radius=width / 2,
+            outer_radius=light_width / 2,
             layers=3,
-            num_points=num_lights)
+            num_points=number_lights)
     elif grid_type == "ogrid":
         grid = rpy.OffsetGridPattern(
             center=np.array([0, 0]),
-            x_length=width,
-            y_length=width,
-            num_points=num_lights)
+            x_length=light_width,
+            y_length=light_width,
+            num_points=number_lights)
     elif grid_type == "grid":
         grid = rpy.GridPattern(
             center=np.array([0, 0]),
-            x_length=width,
-            y_length=width,
-            num_points=num_lights)
+            x_length=light_width,
+            y_length=light_width,
+            num_points=number_lights)
     elif grid_type == "spiral":
         grid = rpy.SpiralPattern(
             center=np.array([0, 0]),
-            radius=width / 2,
+            radius=light_width / 2,
             radius_start=.5,
             velocity=0.2,
             a_velocity=1,
-            num_points=num_lights)
+            num_points=number_lights)
     else:
         raise ValueError(f"{grid_type} invalid choice.")
 
@@ -136,7 +142,7 @@ def define_lights(grid_type: str = "ogrid", height: float = 5, width: float = 10
     for xy_pos in grid.xy_points:
         lights.append(
             rpy.Light(
-                position=np.insert(xy_pos, 2, height),
+                position=np.insert(xy_pos, 2, light_height),
                 direction=np.array([0, 0, -1], dtype='float64'),
                 num_traces=5,
                 theta_func=1,
@@ -144,14 +150,14 @@ def define_lights(grid_type: str = "ogrid", height: float = 5, width: float = 10
     return lights
 
 
-def simulation(params, domain_vars: list[dict], num_lights: int = 25, mirrors: bool = False, **kwargs):
+def simulation(params, domain_vars: list[dict], **kwargs):
     # parse params
     params = {name["name"]: value for value, name in zip(params, domain_vars)}
     params = params | kwargs
 
     # run simulation
-    lights = define_lights(num_lights=num_lights, **params)
-    sim = run_single(lights, mirrors, **params)
+    lights = define_lights(**params)
+    sim = run_single(lights, **params)
 
     # calculate dependent parameters
     histogram = sim.planes["ground"].histogram
@@ -284,7 +290,7 @@ def grid_search():
     df = pd.DataFrame(all_combinations, columns=[var_["name"] for var_ in domain_vars])
 
     for i, row in df.iterrows():
-        mean, std = simulation(list(row.values), domain_vars=domain_vars, mirrors=True)
+        mean, std = simulation(list(row.values), domain_vars=domain_vars, mirrors=True, number_lights=49)
         df_output.iloc[i] = [mean, std]
         print(i, "out of", len(all_combinations))
 
@@ -296,7 +302,7 @@ def grid_search():
 
     df = pd.concat([df, df_output], axis=1)
     print(df.head())
-    df.to_csv("grid_search_mirror.csv")
+    df.to_csv("grid_search_mirror_16.csv")
 
 
 if __name__ == "__main__":
