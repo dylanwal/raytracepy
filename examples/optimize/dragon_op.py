@@ -252,14 +252,14 @@ def run():
         {'name': 'grid_type', 'type': 'discrete', 'items': ['circle', 'ogrid', 'grid', 'spiral']},
         {"name": "light_height", "type": "float", "min": 0.5, "max": 10},
         {"name": "light_width", "type": "float", "min": 5, "max": 20},
-        # {"name": "box_offset", "type": "float", "min": 0.1, "max": 5}
+        {"name": "box_offset", "type": "float", "min": 0.1, "max": 5}
     ]
     # Create domain
     config = load_config({'domain': domain_vars})
 
     # Simulate
-    result = multi_objective(func=simulation, config=config, init_expts=6, max_expts=30,
-                    args={"mirrors": False, "num_lights": 25, "objective": "multi", "domain_vars": domain_vars})
+    result = multi_objective(func=simulation, config=config, init_expts=8, max_expts=30,
+                    args={"mirrors": True, "num_lights": 16, "domain_vars": domain_vars})
 
     # save results
     save_data(result, "result")
@@ -289,23 +289,25 @@ def grid_search():
     df_output = pd.DataFrame(temp, columns=["mean", "std"])
     df = pd.DataFrame(all_combinations, columns=[var_["name"] for var_ in domain_vars])
 
-    for i, row in df.iterrows():
-        mean, std = simulation(list(row.values), domain_vars=domain_vars, mirrors=True, number_lights=49)
-        df_output.iloc[i] = [mean, std]
-        print(i, "out of", len(all_combinations))
+    # for i, row in df.iterrows():
+    #     mean, std = simulation(list(row.values), domain_vars=domain_vars, mirrors=True, number_lights=16)
+    #     df_output.iloc[i] = [mean, std]
+    #     print(i, "out of", len(all_combinations))
 
-    # from multiprocessing import Pool
-    # kwargs = {"domain_vars": domain_vars, "mirrors": True}
-    # from functools import partial
-    # with Pool(3) as p:
-    #     output = p.map(partial(simulation, **kwargs), all_combinations)
+    from multiprocessing import Pool
+    kwargs = {"domain_vars": domain_vars, "mirrors": False, "number_lights": 49}
+    from functools import partial
+    with Pool(14) as p:
+        output = p.map(partial(simulation, **kwargs), all_combinations)
+    df_output = pd.DataFrame(output, columns=["mean", "std"])
+
 
     df = pd.concat([df, df_output], axis=1)
     print(df.head())
-    df.to_csv("grid_search_mirror_16.csv")
+    df.to_csv("grid_search.csv")
 
 
 if __name__ == "__main__":
-    # run()
-    grid_search()
+    run()
+    # grid_search()
 

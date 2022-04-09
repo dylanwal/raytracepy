@@ -36,7 +36,7 @@ hull = scipy.spatial.ConvexHull(hull_points)
 hull_xy = np.array([hull_points[hull.vertices, 0], hull_points[hull.vertices, 1]])
 
 # Load data
-with open("result_2022_04_07-10_06_18_AM.pickle", 'rb') as file:
+with open("result_2022_04_08-10_04_07_PM.pickle", 'rb') as file:
     results = pickle.load(file)
 
 
