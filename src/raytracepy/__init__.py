@@ -28,7 +28,7 @@ def get_object_uid() -> int:
 
 
 _figure_counter: int = 0
-def default_plot_layout(fig, save_open: bool = True, **kwargs):
+def default_plot_layout(fig, save_open: bool = True):
     global _figure_counter
     layout = {
         "autosize": False,

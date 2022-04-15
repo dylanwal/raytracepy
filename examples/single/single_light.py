@@ -34,7 +34,7 @@ def main():
     sim = rpy.RayTrace(
         planes=ground,
         lights=light,
-        total_num_rays=3_000_000
+        total_num_rays=10_000_000
     )
     sim.run()
 
@@ -47,7 +47,7 @@ def main():
     ground.hit_stats(True)
 
     # plotting
-    sim.plot_report(file_name)
+    sim.plot_report(file_name, plot_rdf=True)
     print("hi")
 
 

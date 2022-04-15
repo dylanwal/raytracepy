@@ -73,7 +73,7 @@ def main():
         y_length=12.5,
         num_points=50)
 
-    sim = run_single(h=8, grid=grid)
+    sim = run_single(h=9, grid=grid)
     file_name = "array_led_radio"
     # sim.save_data(file_name)
 
@@ -85,10 +85,10 @@ def main():
     # plotting
     # sim.plot_report(file_name)
 
-    xy = rpy.GridPattern(center=np.array([-0.5, 0.3]), x_length=25 - 8, y_length=16 - 4.5, num_points=100).xy_points
-    x = xy[:, 0].reshape((10, 10)).T.reshape(100)
-    y = xy[:, 1].reshape((10, 10)).T.reshape(100)
-    xy = np.column_stack((x, y))
+    xy = rpy.GridPattern(center=np.array([0, 0]), x_length=18, y_length=18, num_points=18*18).xy_points
+    # x = xy[:, 0].reshape((10, 10)).T.reshape(100)
+    # y = xy[:, 1].reshape((10, 10)).T.reshape(100)
+    # xy = np.column_stack((x, y))
     # xy = np.insert(xy, 2, no_mirror_integral[2:-1], axis=1)
 
     fig = sim.planes["ground"].plot_sensor(xy=xy, r=0.85, normalize=True, save_open=False)

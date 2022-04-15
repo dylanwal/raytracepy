@@ -143,7 +143,7 @@ class Plane:
         return f"Plane {self.name}; {self.uid}|| pos: {self.position}; norm: {self.normal}"
 
     @property
-    def histogram(self):
+    def histogram(self) -> Histogram:
         # Calculate histogram
         if self._histogram is None or self._hist_update:
             if self.orientation == OrientationTypes.vertical_y:
@@ -366,6 +366,22 @@ class Plane:
         default_plot_layout(fig, save_open)
         return fig
 
+    def plot_histogram(self, save_open: bool = True, bins: int = 100, kwargs: dict = None):
+        kkwargs = {}
+        if kwargs is not None:
+            kkwargs = kkwargs | kwargs
+
+        his_array = np.reshape(self.histogram.values,
+                               (self.histogram.values.shape[0] * self.histogram.values.shape[1],))
+
+        d1_histogram = np.histogram(his_array, bins=bins)
+
+        fig = go.Figure()
+        fig.add_trace(go.Scatter(x=d1_histogram[1], y=d1_histogram[0], mode="lines"))
+        default_plot_layout(fig, save_open)
+        fig.update_yaxes(range=[0, np.max(d1_histogram[0])])
+        return fig
+
     def shape_grid(self, xy: np.ndarray, r: float = 1) -> np.ndarray:
         """
 
@@ -478,6 +494,7 @@ class Plane:
             figs.append(self.plot_rdf(bins=40, normalize=True, save_open=False))
         figs.append(self.html_hit_stats())
         figs.append(self.html_hit_stats(normalized=True))
+        figs.append(self.plot_histogram(save_open=False))
 
         if write:
             merge_html_figs(figs, file_name, auto_open=auto_open)

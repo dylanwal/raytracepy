@@ -76,16 +76,17 @@ def main():
     colors = plot_format.get_plot_color(2)
     fig = go.Figure()
     fig.add_trace(go.Scatter(x=ln_sim[:, 0], y=ln_sim[:, 1], mode="markers", marker=dict(color=colors[0], size=10),
-                             name=f"simulation"))
+                             name=f"<b>simulation</b>"))
     lin_reg(fig, ln_sim[:, 0], ln_sim[:, 1], color=colors[0])
     fig.add_trace(go.Scatter(x=ln_expt[:, 0], y=ln_expt[:, 1], mode="markers", marker=dict(color=colors[1], size=10),
-                             name=f"experiment"))
+                             name=f"<b>experiment</b>"))
     lin_reg(fig, ln_expt[:, 0], ln_expt[:, 1], x_eq=0.6, y_eq=0.60, color=colors[1])
 
     fig.add_annotation(x=2.1, y=0.2, text="\u031A ", font={"size": 100})
     fig.add_annotation(x=2.4, y=.7, text="<b> -2 slope <br>(theory) </b>", font={"size": 24})
 
-    plot_format.add_plot_format(fig, x_axis="ln(distance (cm))", y_axis="ln(normalized intensity)")
+    plot_format.add_plot_format(fig, x_axis="<b>ln(distance (cm))</b>", y_axis="<b>ln(normalized intensity)</b>")
+    fig.update_layout(legend=dict(x=.75, y=.95))
     fig.write_html("ln_dependence.html", auto_open=True, include_plotlyjs='cdn')
 
     ###################################################################################################################
@@ -128,11 +129,11 @@ def main():
         fig.add_trace(
             go.Scatter(
                 x=rdf[:, 0], y=rdf[:, i + 1] / np.max(rdf[:, i + 1]),
-                mode="lines", line=dict(color=color, width=3, dash='dash'), name=f"{height} cm (sim)", showlegend=False
+                mode="lines", line=dict(color=color, width=3, dash='dash'), name=f"<b>{height} cm (sim)</b>", showlegend=False
             )
         )
 
-    plot_format.add_plot_format(fig, x_axis="distance (cm)", y_axis="normalized light flux")
+    plot_format.add_plot_format(fig, x_axis="<b>distance (cm)</b>", y_axis="<b>normalized light flux</b>")
     fig.write_html("rdf_normalized.html", auto_open=True, include_plotlyjs='cdn')
 
 

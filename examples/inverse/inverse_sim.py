@@ -43,8 +43,8 @@ def single_run(height: float):
 
 
 def main():
-    n = 6
-    height = np.linspace(1, 16, n)
+    n = 5
+    height = np.linspace(1, 10, n)
     for i in range(len(height)):
         sim = single_run(height[i])
         sim.save_data()

@@ -22,12 +22,22 @@ def create_rays(theta_func_id, direction,
     """
     Create the direction vectors for rays.
 
-    :param theta_func_id:
-    :param direction:
-    :param phi:
-    :param num_rays:
-    :return num_rays by 3 matrix [x,y,z] direction vector
-     """
+    Parameters
+    ----------
+    theta_func_id: int
+        id for theta function
+    direction: array
+        [x,y,z] direction of light
+    phi: np.ndarray[2]
+        phi component of
+    num_rays: int
+        number of rays
+
+    Returns
+    -------
+    ray_dir: np.ndarray[num_rays, 3]
+        [x,y,z] direction vector
+    """
     theta = theta_func_selector(theta_func_id, num_rays)
     phi = get_phi(phi, num_rays)
     rays_dir = spherical_to_cartesian(theta, phi)
