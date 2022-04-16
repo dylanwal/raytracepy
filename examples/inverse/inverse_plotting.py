@@ -106,16 +106,16 @@ def main():
             max_theory = np.max(y_theory)
         fig.add_trace(
             go.Scatter(x=x_theory, y=y_theory / max_theory, mode="lines", line=dict(color=color, width=3),
-                       name=f"{height} cm ")  # (theory)
+                       name=f"<b>{height} cm (sim)</b>")  # (theory)
         )
         fig.add_trace(
             go.Scatter(
                 x=rdf[:, 0], y=rdf[:, i + 1] / max_,
-                mode="lines", line=dict(color=color, width=3, dash='dash'), name=f"{height} cm (sim)", showlegend=False
+                mode="lines", line=dict(color=color, width=3, dash='dash'), name=f"<b>{height} cm (sim)</b>", showlegend=False
             )
         )
 
-    plot_format.add_plot_format(fig, x_axis="distance (cm)", y_axis="relative light flux")
+    plot_format.add_plot_format(fig, x_axis="<b>distance (cm)</b>", y_axis="<b>relative light flux</b>")
     fig.write_html("rdf.html", auto_open=True, include_plotlyjs='cdn')
 
     # plotting rdf normalized
@@ -124,12 +124,12 @@ def main():
         y_theory = raypy_t.intensity_on_flat_surface(x_theory, 0, height)
         fig.add_trace(
             go.Scatter(x=x_theory, y=y_theory / np.max(y_theory), mode="lines", line=dict(color=color, width=3),
-                       name=f"{height} cm ")  # (theory)
+                       name=f"<b>{height} cm</b>")  # (theory)
         )
         fig.add_trace(
             go.Scatter(
                 x=rdf[:, 0], y=rdf[:, i + 1] / np.max(rdf[:, i + 1]),
-                mode="lines", line=dict(color=color, width=3, dash='dash'), name=f"<b>{height} cm (sim)</b>", showlegend=False
+                mode="lines", line=dict(color=color, width=3, dash='dash'), name=f"<b>{height} cm</b>", showlegend=False
             )
         )
 
