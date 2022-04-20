@@ -1,6 +1,5 @@
 """
 Array of Lights over a horizontal plane
-
 """
 
 import numpy as np
@@ -42,58 +41,14 @@ def run_single(h: float, grid):
     return sim
 
 
-def main_multi():
-    height = [1, 2.5, 5, 7.5, 10, 12.5, 15]
-    num_lights = 49  # [4, 16, 36, 49, 81]
-    width = 12.5 # [7.5, 10, 12.5, 15]
-
-    for h in height:
-        # grid = rpy.CirclePattern(
-        #     center=np.array([0, 0]),
-        #     outer_radius=w/2,
-        #     layers=3,
-        #     num_points=num_lights)
-        #
-        grid = rpy.OffsetGridPattern(
-            center=np.array([0, 0]),
-            x_length=width,
-            y_length=width,
-            num_points=num_lights)
-
-        # grid = rpy.GridPattern(
-        #     center=np.array([0, 0]),
-        #     x_length=w,
-        #     y_length=w,
-        #     num_points=num_lights)
-        #
-        # grid = rpy.SpiralPattern(
-        #     center=np.array([0, 0]),
-        #     radius=w/2,
-        #     radius_start=.5,
-        #     velocity=0.2,
-        #     a_velocity=1,
-        #     num_points=num_lights)
-
-        sim = run_single(h=h, grid=grid)
-        file_name = f"ogrid_h_{h}cm"
-        sim.plot_report(file_name)
-        print(f"n_{h} done")
-
-    # for height in heights:
-    #     sim = run_single(h=height, grid=grid)
-    #     file_name = f"array_led_{height}cm"
-    #     sim.plot_report(file_name)
-    #     print(f"h={height} done")
-
-
 def main():
     grid = rpy.OffsetGridPattern(
         center=np.array([0, 0]),
         x_length=12.5,
         y_length=12.5,
-        num_points=46)
+        num_points=50)
 
-    sim = run_single(h=1, grid=grid)
+    sim = run_single(h=5, grid=grid)
     file_name = "array_uniform"
     # sim.save_data(file_name)
 
@@ -108,4 +63,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-    # main_multi()

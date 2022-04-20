@@ -308,6 +308,6 @@ def grid_search():
 
 
 if __name__ == "__main__":
-    run()
-    # grid_search()
+    # run()
+    grid_search()
 

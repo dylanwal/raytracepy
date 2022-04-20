@@ -7,7 +7,7 @@ import plotly.figure_factory as ff
 import plotly.express as px
 import scipy.spatial
 
-import results_html
+from examples import results_html
 
 colors = {
     "circle": "red",
