@@ -1,5 +1,5 @@
 """
-Array of Lights over a horizontal plane
+Array of Lights over a flat surface
 """
 
 import numpy as np
@@ -7,7 +7,7 @@ import numpy as np
 import raytracepy as rpy
 
 
-def run_single(h: float, grid):
+def main():
     # define planes
     ground = rpy.Plane(
         name="ground",
@@ -20,7 +20,12 @@ def run_single(h: float, grid):
     )
 
     # define lights
-    height = h
+    height = 5
+    grid = rpy.OffsetGridPattern(
+        center=np.array([0, 0]),
+        x_length=12.5,
+        y_length=12.5,
+        num_points=50)
     lights = []
     for xy_pos in grid.xy_points:
         lights.append(
@@ -38,19 +43,6 @@ def run_single(h: float, grid):
         total_num_rays=10_000_000,
     )
     sim.run()
-    return sim
-
-
-def main():
-    grid = rpy.OffsetGridPattern(
-        center=np.array([0, 0]),
-        x_length=12.5,
-        y_length=12.5,
-        num_points=50)
-
-    sim = run_single(h=5, grid=grid)
-    file_name = "array_uniform"
-    # sim.save_data(file_name)
 
     # print stats
     sim.stats()
@@ -58,7 +50,7 @@ def main():
     sim.planes["ground"].hit_stats(True)
 
     # plotting
-    sim.plot_report(file_name)
+    sim.plot_report("array_uniform")
 
 
 if __name__ == "__main__":

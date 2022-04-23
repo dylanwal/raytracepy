@@ -1,6 +1,7 @@
 """
-Array of Lights over a horizontal plane
+Generates huge combinational dataset across a range of properties.
 
+* Warning: highly computational expensive to run
 """
 import itertools
 
@@ -150,18 +151,18 @@ def _define_grid(grid_type: str, number_lights: int, width: float) -> rpy.light_
             num_points=number_lights)
 
 
-def multi_simulation(*args, **kwargs):
+def simulation(*args, **kwargs):
     args = args[0]
     grid_type = args[0]
     number_lights = args[1]
     height = args[2]
     width = args[3]
-    mirrors = False
+    mirrors = False  ##################################################################################
     if mirrors:
         mirror_offset = args[4]
     else:
         mirror_offset = 0
-    diffuser = True
+    diffuser = True #################################################################################
     if diffuser:
         diffuser_height = args[4]
     else:
@@ -182,28 +183,30 @@ def multi_simulation(*args, **kwargs):
             np.percentile(his_array, 95), np.percentile(his_array, 99), np.max(his_array)]
 
 
-def main_multi():
-
-    sim_args = ["grid_type", "number_lights", "height", "width", "diffuser_height"]
+def main():
+    # set parameters
+    sim_args = ["grid_type", "number_lights", "height", "width", "diffuser_height"]  ################## "diffuser_height", "mirror_offset" ** change bool in simulation
     height = [1, 2, 3, 5, 10, 15]
     number_lights = [4, 16, 36, 49, 81]
     width = [7.5, 10, 12.5, 15]
-    grid_type = ['ogrid'] #['circle', 'ogrid', 'grid', 'spiral']
+    grid_type = ['ogrid']  # ['circle', 'ogrid', 'grid', 'spiral']
     mirror_offset = [0.1, 1, 2.5, 5, 10]
     diffuser_height = [0.05, 0.33, 0.66, 0.95]
 
-    all_combinations = list(itertools.product(grid_type, number_lights, height, width, diffuser_height))
-
+    # build all combinations
+    all_combinations = list(itertools.product(grid_type, number_lights, height, width, diffuser_height))  ########## diffuser_height, mirror_offset ** change bool in simulation
     df = pd.DataFrame(all_combinations, columns=sim_args)
 
+    # run all combinations
     from multiprocessing import Pool
     with Pool(14) as p:
-        output = p.map(multi_simulation, all_combinations)
+        output = p.map(simulation, all_combinations)
 
+    # save output
     df_output = pd.DataFrame(output, columns=["mean", "std", "min", "1", "5", "10", "90", "95", "99", "max"])
     df = pd.concat([df, df_output], axis=1)
     df.to_csv("combinations.csv")
 
 
 if __name__ == "__main__":
-    main_multi()
+    main()

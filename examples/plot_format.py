@@ -43,6 +43,25 @@ layout_yaxis = {
     "gridcolor": 'lightgray'
 }
 
+
+def rgb_add_opacity(color: (str, list[str]), opacity: float) -> (str, list[str]):
+    """ 'rgb(#,#,#)' -> 'rgba(#,#,#,#)' """
+    flag_for_string = False
+    if isinstance(color, str):
+        color = [color]
+        flag_for_string = True
+
+    out = []
+    for col in color:
+        split_text = re.findall("[0-9.]{1,3}", col)
+        out.append(f"rgba({split_text[0]},{split_text[1]},{split_text[2]},{opacity})")
+
+    if flag_for_string:
+        return out[0]
+
+    return out
+
+
 hex_options = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F']
 
 

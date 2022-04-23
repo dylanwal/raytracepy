@@ -1,12 +1,12 @@
 """
-Single Light over a horizontal plane
+Array of Lights with a diffuser plane over a flat surface
 """
 import raytracepy as rpy
 
 import numpy as np
 
 
-def run_single(h, h_diff):
+def main():
     # define planes
     ground = rpy.Plane(
         name="ground",
@@ -19,7 +19,7 @@ def run_single(h, h_diff):
     )
     diffuser = rpy.Plane(
         name="diffuser",
-        position=np.array([0, 0, h_diff], dtype='float64'),
+        position=np.array([0, 0, 4], dtype='float64'),
         normal=np.array([0, 0, 1], dtype='float64'),
         length=30,
         width=30,
@@ -38,7 +38,7 @@ def run_single(h, h_diff):
         y_length=12.5,
         num_points=50)
 
-    height = h
+    height = 5
     lights = []
     for xy_pos in grid.xy_points:
         lights.append(
@@ -57,22 +57,6 @@ def run_single(h, h_diff):
         bounce_max=2
     )
     sim.run()
-    return sim
-
-
-def main_multi():
-    heights = np.linspace(0.5, 4.8, 4)
-    for height in heights:
-        sim = run_single(h=5, h_diff=height)
-        file_name = f"diffuser_led_{height}cm_90"
-        sim.plot_report(file_name)
-        print(f"h={height} done")
-
-
-def main():
-    sim = run_single(h=5, h_diff=4)
-    file_name = "diffuser_led"
-    #sim.save_data(file_name)
 
     # print stats
     sim.stats()
@@ -80,9 +64,8 @@ def main():
     sim.planes["ground"].hit_stats(True)
 
     # plotting
-    sim.plot_report(file_name)
+    sim.plot_report("diffuser_led")
 
 
 if __name__ == "__main__":
-    # main()
-    main_multi()
+    main()

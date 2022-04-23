@@ -1,12 +1,12 @@
 """
-Single Light over a horizontal plane
+Array of Lights with a mirror box over a flat surface
 """
-import raytracepy as rpy
-
 import numpy as np
 
+import raytracepy as rpy
 
-def run_single(h: float):
+
+def main():
     # define lights
     grid = rpy.OffsetGridPattern(
         center=np.array([0, 0]),
@@ -14,7 +14,7 @@ def run_single(h: float):
         y_length=12.5,
         num_points=50)
 
-    height = h
+    height = 5
     lights = []
     for xy_pos in grid.xy_points:
         lights.append(
@@ -95,22 +95,6 @@ def run_single(h: float):
         bounce_max=20
     )
     sim.run()
-    return sim
-
-
-def main_multi():
-    heights = [1, 2.5, 5, 7.5, 10, 12.5, 15]
-    for height in heights:
-        sim = run_single(h=height)
-        file_name = f"ogrid_mirror_{height}cm"
-        sim.plot_report(file_name)
-        print(f"h={height} done")
-
-
-def main():
-    sim = run_single(h=5)
-    file_name = "mirror_led"
-    # sim.save_data(file_name)
 
     # print stats
     sim.stats()
@@ -118,9 +102,8 @@ def main():
     sim.planes["ground"].hit_stats(True)
 
     # plotting
-    sim.plot_report(file_name)
+    sim.plot_report("mirror_led")
 
 
 if __name__ == "__main__":
-    # main()
-    main_multi()
+    main()
