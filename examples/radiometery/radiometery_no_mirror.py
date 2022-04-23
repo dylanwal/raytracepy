@@ -4,12 +4,13 @@ Array of Lights over a horizontal plane
 """
 
 import numpy as np
+import pandas as pd
 import plotly.graph_objs as go
 
 import raytracepy as rpy
 
 
-def rectangle_points(corner: list[float] = [0, 0], center: list[float] = None, x_length: float = 10,
+def rectangle_points(corner: list[float] = (0, 0), center: list[float] = None, x_length: float = 10,
                      y_length: float = 10):
     """ Creates the points of a rectangle in an order appropate for plotting."""
     # set position
@@ -25,7 +26,7 @@ def rectangle_points(corner: list[float] = [0, 0], center: list[float] = None, x
     return out
 
 
-def rectangle_points_for_plotting(corner: list[float] = [0, 0], center: list[float] = None, x_length: float = 10,
+def rectangle_points_for_plotting(corner: list[float] = (0, 0), center: list[float] = None, x_length: float = 10,
                                   y_length: float = 10):
     """ Creates the points of a rectangle in an order appropate for plotting and adds 5 point to close the drawing."""
     _points = rectangle_points(corner, center, x_length, y_length)
@@ -60,7 +61,7 @@ def run_single(h: float, grid):
     sim = rpy.RayTrace(
         planes=ground,
         lights=lights,
-        total_num_rays=5_000_000,
+        total_num_rays=10_000_000,
     )
     sim.run()
     return sim
@@ -68,32 +69,29 @@ def run_single(h: float, grid):
 
 def main():
     grid = rpy.OffsetGridPattern(
-        center=np.array([0, 0]),
+        center=np.array([0.5, -1.2]),
         x_length=12.5,
         y_length=12.5,
         num_points=50)
 
     sim = run_single(h=9, grid=grid)
-    file_name = "array_led_radio"
-    # sim.save_data(file_name)
+    sim.plot_report()
 
     # print stats
     sim.stats()
     sim.planes["ground"].hit_stats()
     sim.planes["ground"].hit_stats(True)
 
-    # plotting
-    # sim.plot_report(file_name)
-
+    # getting sensor data
     xy = rpy.GridPattern(center=np.array([0, 0]), x_length=18, y_length=18, num_points=18*18).xy_points
-    # x = xy[:, 0].reshape((10, 10)).T.reshape(100)
-    # y = xy[:, 1].reshape((10, 10)).T.reshape(100)
-    # xy = np.column_stack((x, y))
-    # xy = np.insert(xy, 2, no_mirror_integral[2:-1], axis=1)
+    z = sim.planes["ground"].shape_grid(xy=xy, r=0.4)
+    df = pd.DataFrame(np.column_stack((xy, z)), columns=["x", "y", "integ_watts"])
+    # df.to_csv("no_mirror.csv")
 
-    fig = sim.planes["ground"].plot_sensor(xy=xy, r=0.85, normalize=True, save_open=False)
+    # plotting
+    fig = sim.planes["ground"].plot_sensor(xy=xy, r=0.4, normalize=True, save_open=False)
     sim._add_lights_2D(fig)
-    box = rectangle_points_for_plotting(center=[0, 0], x_length=10, y_length=10)
+    box = rectangle_points_for_plotting(center=[0, 0], x_length=11, y_length=11)
     fig.add_trace(
         go.Scatter(
             x=box[:, 0],
@@ -101,8 +99,24 @@ def main():
             mode='lines', connectgaps=True, line=dict(color='rgb(100,100,100)', width=3)
         ))
 
-    fig.update_layout(width=1080, height=790)
-    fig.write_html("radio.html", auto_open=True)
+    fig.data[0].marker.colorbar.title.text = "<b>Irradiance (W/m<sup>2</sup>)</b>"
+    fig.data[0].marker.colorbar.tickprefix = "<b>"
+    fig.data[0].marker.colorbar.ticksuffix = "</b>"
+    fig.update_layout(autosize=False, width=1000, height=790, showlegend=False,
+                      font=dict(family="Arial", size=18, color="black"), plot_bgcolor="white",
+                      margin=dict(
+                          l=50,
+                          r=40,
+                          b=50,
+                          t=62,
+                          pad=4
+                      ),
+                      )
+    fig.update_xaxes(title="<b>X</b>", range=[-10, 10], tickprefix="<b>", ticksuffix="</b>", showline=True, linewidth=5,
+                     linecolor='black', showgrid=False, mirror=True)
+    fig.update_yaxes(title="<b>Y</b>", range=[-10, 10], tickprefix="<b>", ticksuffix="</b>", showline=True, linewidth=5,
+                     linecolor='black', showgrid=False, mirror=True)
+    fig.write_html("temp.html", auto_open=True)
 
 
 if __name__ == "__main__":
