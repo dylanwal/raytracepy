@@ -109,6 +109,16 @@ fig_control.update_layout(layout)
 fig_control.update_xaxes(xaxis)
 fig_control.update_yaxes(yaxis)
 
+# add plot formatting
+fig.update_layout(autosize=False, width=800, height=600, font=dict(family="Arial", size=18, color="black"),
+                  plot_bgcolor="white", showlegend=True, legend=dict(x=.05, y=.95))
+fig.update_xaxes(title="<b>mean irradiance</b>", tickprefix="<b>", ticksuffix="</b>", showline=True,
+                 linewidth=5, mirror=True, linecolor='black', ticks="outside", tickwidth=4, showgrid=False,
+                 gridwidth=1, gridcolor="lightgray")
+fig.update_yaxes(title="<b>std irradiance</b>", tickprefix="<b>", ticksuffix="</b>", showline=True,
+                 linewidth=5, mirror=True, linecolor='black', ticks="outside", tickwidth=4, showgrid=False,
+                 gridwidth=1, gridcolor="lightgray")
+
 #########################################################
 #########################################################
 #########################################################

@@ -1,22 +1,20 @@
-import itertools
 import pickle
 import datetime
 
 import numpy as np
 import pandas as pd
 
-# Modules required for Dragonfly
 from argparse import Namespace
 from dragonfly import load_config
 from dragonfly.exd.worker_manager import SyntheticWorkerManager
-from dragonfly.exd.experiment_caller import CPFunctionCaller, CPMultiFunctionCaller
-from dragonfly.opt.multiobjective_gp_bandit import CPMultiObjectiveGPBandit  # for multi-objective
+from dragonfly.exd.experiment_caller import CPMultiFunctionCaller
+from dragonfly.opt.multiobjective_gp_bandit import CPMultiObjectiveGPBandit
 
 import raytracepy as rpy
 
 
-def run_single(lights, mirrors: bool = False, length: float = 10, width: float = 10, **kwargs):
-    # define planes
+def define_planes(light_height: float = 5, mirrors: bool = False, length: float = 10, width: float = 10, **kwargs) \
+        -> list[rpy.Plane]:
     if mirrors:
         ground = rpy.Plane(
             name="ground",
@@ -34,8 +32,7 @@ def run_single(lights, mirrors: bool = False, length: float = 10, width: float =
         else:
             box_dim = width
 
-        height = lights[0].position[2]
-        box_height = height + 0.25
+        box_height = light_height + 0.25
         mirror_left = rpy.Plane(
             name="mirror_left",
             position=np.array([-box_dim / 2, 0, box_height / 2], dtype='float64'),
@@ -95,19 +92,11 @@ def run_single(lights, mirrors: bool = False, length: float = 10, width: float =
         )
         planes = [ground]
 
-    # Create ref_data class
-    sim = rpy.RayTrace(
-        planes=planes,
-        lights=lights,
-        total_num_rays=500_000,
-        bounce_max=5,
-    )
-    sim.run()
-    return sim
+    return planes
 
 
-def define_lights(grid_type: str = "ogrid", light_height: float = 5, light_width: float = 10, number_lights: int = 25, **kwargs) \
-        -> list[rpy.Light]:
+def define_lights(grid_type: str = "ogrid", light_height: float = 5, light_width: float = 10, number_lights: int = 25,
+                  **kwargs) -> list[rpy.Light]:
     if grid_type == "circle":
         grid = rpy.CirclePattern(
             center=np.array([0, 0]),
@@ -146,6 +135,7 @@ def define_lights(grid_type: str = "ogrid", light_height: float = 5, light_width
                 direction=np.array([0, 0, -1], dtype='float64'),
                 num_traces=5,
                 theta_func=1,
+                num_rays=100_000,
             ))
     return lights
 
@@ -157,7 +147,13 @@ def simulation(params, domain_vars: list[dict], **kwargs):
 
     # run simulation
     lights = define_lights(**params)
-    sim = run_single(lights, **params)
+    planes = define_planes(**params)
+    sim = rpy.RayTrace(
+        planes=planes,
+        lights=lights,
+        bounce_max=5,
+    )
+    sim.run()
 
     # calculate dependent parameters
     histogram = sim.planes["ground"].histogram
@@ -226,10 +222,10 @@ def multi_objective(func: callable, config, init_expts: int = 8, max_expts: int 
 
         area = calc_pareto_area(opt)
         print("iter:", opt.step_idx, "area", area, "x:", x, ", y:", y)
-        area_cutoff = pareto_area[pareto_area.argsort()][-3]
-        if (area-area_cutoff)/area_cutoff <= 0.02:
-            print("area not changing")
-            break
+        # area_cutoff = pareto_area[pareto_area.argsort()][-3]
+        # if (area - area_cutoff) / area_cutoff <= 0.02:
+        #     print("area not changing")
+        #     break
         pareto_area[j] = area
 
     return opt.history
@@ -248,66 +244,38 @@ def save_data(data, file_name: str = "data", _dir: str = None):
 
 def run():
     # Define variables
-    domain_vars = [
-        {'name': 'grid_type', 'type': 'discrete', 'items': ['circle', 'ogrid', 'grid', 'spiral']},
-        {"name": "light_height", "type": "float", "min": 0.5, "max": 10},
-        {"name": "light_width", "type": "float", "min": 5, "max": 20},
-        {"name": "box_offset", "type": "float", "min": 0.1, "max": 5}
+    domain = [
+        # continuous
+        # {"name": "number_lights", "type": "int", "min": 4, "max": 81},
+        {"name": "light_height", "type": "float", "min": 1, "max": 15},
+        {"name": "light_width", "type": "float", "min": 5, "max": 15},
+        {"name": "mirror_offset", "type": "float", "min": 0.1, "max": 10},
+        # discrete (always put last)
+        # {'name': 'grid_type', 'type': 'discrete', 'items': ['circle', 'ogrid', 'grid', 'spiral']},
     ]
-    # Create domain
-    config = load_config({'domain': domain_vars})
+    args = {"mirrors": True, "number_lights": 49, "grid_type": "ogrid"}
+    init_expts = 6
+    max_expts = 30
 
-    # Simulate
-    result = multi_objective(func=simulation, config=config, init_expts=8, max_expts=30,
-                    args={"mirrors": True, "num_lights": 16, "domain_vars": domain_vars})
+    # Create domain
+    config = load_config({'domain': domain})
+
+
+    # Optimize
+    result = multi_objective(func=simulation, config=config, init_expts=init_expts, max_expts=max_expts,
+                             args={**args, "domain_vars": domain})
 
     # save results
-    save_data(result, "result")
+    result.args = args
+    result.init_expts = init_expts
+    result.max_expts = max_expts
+    result.domain = domain
+    result.domain_ordering = config.domain.raw_name_ordering
+    result.value_ordering = ["mean", "std"]
+    save_data(result, "results")
 
     print("done")
 
 
-def grid_search():
-    n = 5
-    domain_vars = [
-        {'name': 'grid_type', 'type': 'discrete', 'items': ['circle', 'ogrid', 'grid', 'spiral']},
-        {"name": "light_height", "type": "float", "min": 0.5, "max": 10},
-        {"name": "light_width", "type": "float", "min": 5, "max": 20},
-        {"name": "box_offset", "type": "float", "min": 0.1, "max": 5}
-    ]
-
-    combinations = []
-    for var_ in domain_vars:
-        if var_["type"] == "discrete":
-            combinations.append(var_["items"])
-        else:
-            combinations.append(list(np.linspace(var_["min"], var_["max"], n)))
-
-    all_combinations = list(itertools.product(*combinations))
-
-    temp = np.zeros((len(all_combinations), 2))
-    df_output = pd.DataFrame(temp, columns=["mean", "std"])
-    df = pd.DataFrame(all_combinations, columns=[var_["name"] for var_ in domain_vars])
-
-    # for i, row in df.iterrows():
-    #     mean, std = simulation(list(row.values), domain_vars=domain_vars, mirrors=True, number_lights=16)
-    #     df_output.iloc[i] = [mean, std]
-    #     print(i, "out of", len(all_combinations))
-
-    from multiprocessing import Pool
-    kwargs = {"domain_vars": domain_vars, "mirrors": False, "number_lights": 49}
-    from functools import partial
-    with Pool(14) as p:
-        output = p.map(partial(simulation, **kwargs), all_combinations)
-    df_output = pd.DataFrame(output, columns=["mean", "std"])
-
-
-    df = pd.concat([df, df_output], axis=1)
-    print(df.head())
-    df.to_csv("grid_search.csv")
-
-
 if __name__ == "__main__":
-    # run()
-    grid_search()
-
+    run()

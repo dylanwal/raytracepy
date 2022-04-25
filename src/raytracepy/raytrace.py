@@ -162,7 +162,7 @@ class RayTrace:
 
         return out
 
-    @time_it
+    #@time_it
     def run(self):
         """ Main Loop: Loop through each light and ray trace. """
         self._generate_plane_matrix()
