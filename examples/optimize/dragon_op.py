@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 
 from argparse import Namespace
+import dragonfly
 from dragonfly import load_config
 from dragonfly.exd.worker_manager import SyntheticWorkerManager
 from dragonfly.exd.experiment_caller import CPMultiFunctionCaller
@@ -135,7 +136,7 @@ def define_lights(grid_type: str = "ogrid", light_height: float = 5, light_width
                 direction=np.array([0, 0, -1], dtype='float64'),
                 num_traces=5,
                 theta_func=1,
-                num_rays=100_000,
+                num_rays=30_000,
             ))
     return lights
 
@@ -160,7 +161,7 @@ def simulation(params, domain_vars: list[dict], **kwargs):
     his_array = np.reshape(histogram.values,
                            (histogram.values.shape[0] * histogram.values.shape[1],))
     mean_ = np.mean(his_array)  # /(sim.total_num_rays / sim.planes["ground"].bins[0] ** 2)
-    std = 100 - np.std(his_array)  # /(sim.total_num_rays/ sim.planes["ground"].bins[0] ** 2)
+    std = np.std(his_array)  # 100-np.std(his_array)
 
     return mean_, std
 
@@ -277,5 +278,74 @@ def run():
     print("done")
 
 
+def single_opt(args, domain, data, **kwargs):
+    mean, std = simulation(args, domain, **kwargs)
+    data.append([*args, mean, std])
+    return mean/std
+
+
+def run_single():
+    from functools import partial
+    import itertools
+
+    # Define variables
+    domain = [
+        # continuous
+        # {"name": "number_lights", "type": "int", "min": 4, "max": 81},
+        {"name": "light_height", "type": "float", "min": 1, "max": 15},
+        {"name": "light_width", "type": "float", "min": 5, "max": 15},
+        {"name": "mirror_offset", "type": "float", "min": 0.1, "max": 10},
+        # discrete (always put last)
+        # {'name': 'grid_type', 'type': 'discrete', 'items': ['circle', 'ogrid', 'grid', 'spiral']},
+    ]
+    args = {"mirrors": True, "number_lights": 49, "grid_type": "ogrid"}
+
+    data = []
+    domain2 = [[1, 15], [5, 15], [0.1, 10]]
+    op_val, op_pt, result = dragonfly.maximize_function(partial(single_opt, domain=domain, data=data),
+                                                        domain=domain2, max_capital=20,
+                                                        opt_method='bo')
+
+    # save results
+    df = pd.DataFrame(data, columns=[value["name"] for value in domain]+["mean", "std"])
+    df.index.name = "expt"
+    df.to_csv("single_param_opt.csv")
+    print("done")
+
+
+def dragon():
+    # Define variables
+    domain = [
+        # continuous
+        # {"name": "number_lights", "type": "int", "min": 4, "max": 81},
+        {"name": "light_height", "type": "float", "min": 1, "max": 15},
+        {"name": "light_width", "type": "float", "min": 5, "max": 15},
+        {"name": "mirror_offset", "type": "float", "min": 0.1, "max": 10},
+        # discrete (always put last)
+        # {'name': 'grid_type', 'type': 'discrete', 'items': ['circle', 'ogrid', 'grid', 'spiral']},
+    ]
+    args = {"mirrors": True, "number_lights": 49, "grid_type": "ogrid"}
+    init_expts = 6
+    max_expts = 30
+
+    # Create domain
+    config = load_config({'domain': domain})
+
+
+    # Optimize
+    result = dragonfly.multiobjective_minimise_function(func=simulation, config=config, init_expts=init_expts, max_expts=max_expts,
+                             args={**args, "domain_vars": domain})
+
+    # save results
+    result.args = args
+    result.init_expts = init_expts
+    result.max_expts = max_expts
+    result.domain = domain
+    result.domain_ordering = config.domain.raw_name_ordering
+    result.value_ordering = ["mean", "std"]
+    save_data(result, "results")
+
+
 if __name__ == "__main__":
     run()
+    # run_single()

@@ -34,18 +34,18 @@ class PointPattern(ABC):
         """ Add points to an existing plot."""
         styling = {
             "mode": 'markers',
-            "marker": dict(color='rgb(0,0,0)', size=10, symbol="x")
+            "marker": dict(color='rgb(0,0,0)', size=10, symbol="circle")
         }
         if kwargs:
             styling = styling | kwargs
 
         fig.add_trace(go.Scatter(x=self.xy_points[:, 0], y=self.xy_points[:, 1], **styling))
 
-    def plot_create(self):  # pragma: no cover
+    def plot_create(self, save_open: bool = True):  # pragma: no cover
         """ Create a plot of setup. """
         fig = go.Figure()
         self.plot_add(fig)
-        default_plot_layout(fig)
+        default_plot_layout(fig, save_open)
 
         return fig
 

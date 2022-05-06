@@ -127,7 +127,7 @@ def plot_convex_hull(df: pd.DataFrame, df_compare: pd.DataFrame = None) -> go.Fi
 
 def main():
     # Load data
-    with open("results_2022_04_24-09_32_17_PM.pickle", 'rb') as file:
+    with open("results_2022_04_30-01_27_50_PM.pickle", 'rb') as file:
         raw_results = pickle.load(file)
     df = extract_results(raw_results)
     dir_ = os.getcwd()

@@ -93,28 +93,33 @@ def plot_grid_pareto_fronts_norm(df: pd.DataFrame) -> go.Figure:
 def plot_num_lights(df: pd.DataFrame) -> go.Figure:
     # select data
     df = df.loc[(df["height"] == 5) & (df["width"] == 12.5) & (df["grid_type"] == "ogrid")]
-    df["mean"] = df["mean"] * df["number_lights"]
+    df["mean"] = df["mean"]
 
     # plot data
-    colors = plot_format.get_plot_color(2)
+    colors = plot_format.get_plot_color(3)
     fig = make_subplots(specs=[[{"secondary_y": True}]])
     fig.add_trace(go.Scatter(x=df["number_lights"], y=df["mean"], mode="lines+markers", name="<b>mean</b>",
-                             marker=dict(color=colors[0], size=10), line=dict(color=colors[0])),
-                  secondary_y=False)
+                             marker=dict(color=colors[0], size=10), line=dict(color=colors[0])))
     fig.add_trace(go.Scatter(x=df["number_lights"], y=df["std"], mode="lines+markers", name="<b>std</b>",
-                             marker=dict(color=colors[1], size=10), line=dict(color=colors[1])),
-                  secondary_y=True)
+                             marker=dict(color=colors[1], size=10), line=dict(color=colors[1]), yaxis="y2"))
+    fig.add_trace(go.Scatter(x=df["number_lights"], y=df["std"]/df["mean"], mode="lines+markers", name="<b>std/mean</b>",
+                             marker=dict(color=colors[2], size=10), line=dict(color=colors[2]), yaxis="y3"))
 
     # add plot formatting
     fig.update_layout(autosize=False, width=800, height=600, font=dict(family="Arial", size=18, color="black"),
-                      plot_bgcolor="white", showlegend=True, legend=dict(x=.05, y=.95))
+                      plot_bgcolor="white", showlegend=True, legend=dict(x=.4, y=.95))
     fig.update_xaxes(title="<b>number of lights</b>", tickprefix="<b>", ticksuffix="</b>", showline=True,
                      linewidth=5, mirror=True, linecolor='black', ticks="outside", tickwidth=4, showgrid=False,
-                     gridwidth=1, gridcolor="lightgray")
+                     gridwidth=1, gridcolor="lightgray", domain=[0.03, 0.88])
     fig.update_yaxes(title="<b>mean irradiance</b>", tickprefix="<b>", ticksuffix="</b>", showline=True,
                      linewidth=5, mirror=True, linecolor='black', ticks="outside", tickwidth=4, showgrid=False,
                      gridwidth=1, gridcolor="lightgray")
-    fig.update_yaxes(title="<b>std irradiance<b>", range=[0, 40], secondary_y=True)
+    fig.update_layout(yaxis2=dict(title="<b>std irradiance<b>", range=[0, 40], anchor="x",
+                                 overlaying="y", side="right"))
+    fig.update_layout(yaxis3=dict(title="<b>std/mean<b>", tickprefix="<b>", ticksuffix="</b>", range=[0, 0.25],
+                                  anchor="free", overlaying="y", side="right", position=1,
+                                  linecolor="black", linewidth=5
+                                  ))
 
     return fig
 
@@ -124,25 +129,30 @@ def plot_height(df: pd.DataFrame) -> go.Figure:
     df = df.loc[(df["number_lights"] == 49) & (df["width"] == 12.5) & (df["grid_type"] == "ogrid")]
 
     # plot data
-    colors = plot_format.get_plot_color(2)
+    colors = plot_format.get_plot_color(3)
     fig = make_subplots(specs=[[{"secondary_y": True}]])
     fig.add_trace(go.Scatter(x=df["height"], y=df["mean"], mode="lines+markers", name="<b>mean</b>",
-                             marker=dict(color=colors[0], size=10), line=dict(color=colors[0])),
-                  secondary_y=False)
+                             marker=dict(color=colors[0], size=10), line=dict(color=colors[0])))
     fig.add_trace(go.Scatter(x=df["height"], y=df["std"], mode="lines+markers", name="<b>std</b>",
-                             marker=dict(color=colors[1], size=10), line=dict(color=colors[1])),
-                  secondary_y=True)
+                             marker=dict(color=colors[1], size=10), line=dict(color=colors[1]), yaxis="y2"))
+    fig.add_trace(go.Scatter(x=df["height"], y=df["std"]/df["mean"], mode="lines+markers", name="<b>std/mean</b>",
+                             marker=dict(color=colors[2], size=10), line=dict(color=colors[2]), yaxis="y3"))
 
     # add plot formatting
     fig.update_layout(autosize=False, width=800, height=600, font=dict(family="Arial", size=18, color="black"),
-                      plot_bgcolor="white", showlegend=True, legend=dict(x=.75, y=.95))
+                      plot_bgcolor="white", showlegend=True, legend=dict(x=.3, y=.95))
     fig.update_xaxes(title="<b>height of lights (cm)</b>", tickprefix="<b>", ticksuffix="</b>", showline=True,
                      linewidth=5, mirror=True, linecolor='black', ticks="outside", tickwidth=4, showgrid=False,
-                     gridwidth=1, gridcolor="lightgray")
+                     gridwidth=1, gridcolor="lightgray", domain=[0.03, 0.88], range=[0, 16])
     fig.update_yaxes(title="<b>mean irradiance</b>", tickprefix="<b>", ticksuffix="</b>", showline=True,
                      linewidth=5, mirror=True, linecolor='black', ticks="outside", tickwidth=4, showgrid=False,
                      gridwidth=1, gridcolor="lightgray")
-    fig.update_yaxes(title="<b>std irradiance<b>", range=[0, 40], secondary_y=True)
+    fig.update_layout(yaxis2=dict(title="<b>std irradiance<b>", range=[0, 40], anchor="x",
+                                 overlaying="y", side="right"))
+    fig.update_layout(yaxis3=dict(title="<b>std/mean<b>", tickprefix="<b>", ticksuffix="</b>", range=[0, 0.25],
+                                  anchor="free", overlaying="y", side="right", position=1,
+                                  linecolor="black", linewidth=5
+                                  ))
 
     return fig
 
@@ -152,25 +162,31 @@ def plot_width(df: pd.DataFrame) -> go.Figure:
     df = df.loc[(df["number_lights"] == 49) & (df["height"] == 5) & (df["grid_type"] == "ogrid")]
 
     # plot data
-    colors = plot_format.get_plot_color(2)
+    colors = plot_format.get_plot_color(3)
     fig = make_subplots(specs=[[{"secondary_y": True}]])
     fig.add_trace(go.Scatter(x=df["width"], y=df["mean"], mode="lines+markers", name="<b>mean</b>",
                              marker=dict(color=colors[0], size=10), line=dict(color=colors[0])),
                   secondary_y=False)
     fig.add_trace(go.Scatter(x=df["width"], y=df["std"], mode="lines+markers", name="<b>std</b>",
-                             marker=dict(color=colors[1], size=10), line=dict(color=colors[1])),
-                  secondary_y=True)
+                             marker=dict(color=colors[1], size=10), line=dict(color=colors[1]), yaxis="y2"))
+    fig.add_trace(go.Scatter(x=df["width"], y=df["std"]/df["mean"], mode="lines+markers", name="<b>std/mean</b>",
+                         marker=dict(color=colors[2], size=10), line=dict(color=colors[2]), yaxis="y3"))
 
     # add plot formatting
     fig.update_layout(autosize=False, width=800, height=600, font=dict(family="Arial", size=18, color="black"),
-                      plot_bgcolor="white", showlegend=True, legend=dict(x=.75, y=.95))
+                      plot_bgcolor="white", showlegend=True, legend=dict(x=.5, y=.95))
     fig.update_xaxes(title="<b>width of light pattern (cm)</b>", tickprefix="<b>", ticksuffix="</b>", showline=True,
                      linewidth=5, mirror=True, linecolor='black', ticks="outside", tickwidth=4, showgrid=False,
-                     gridwidth=1, gridcolor="lightgray")
+                     gridwidth=1, gridcolor="lightgray", domain=[0.03, 0.88])
     fig.update_yaxes(title="<b>mean irradiance</b>", tickprefix="<b>", ticksuffix="</b>", showline=True,
                      linewidth=5, mirror=True, linecolor='black', ticks="outside", tickwidth=4, showgrid=False,
                      gridwidth=1, gridcolor="lightgray")
-    fig.update_yaxes(title="<b>std irradiance<b>", range=[0, 40], secondary_y=True)
+    fig.update_layout(yaxis2=dict(title="<b>std irradiance<b>", range=[0, 40], anchor="x",
+                                 overlaying="y", side="right"))
+    fig.update_layout(yaxis3=dict(title="<b>std/mean<b>", tickprefix="<b>", ticksuffix="</b>", range=[0, 0.25],
+                                  anchor="free", overlaying="y", side="right", position=1,
+                                  linecolor="black", linewidth=5
+                                  ))
 
     return fig
 

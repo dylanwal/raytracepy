@@ -169,7 +169,7 @@ def simulation(*args, **kwargs):
         diffuser_height = 0
 
     sim = run_single(height, number_lights, width, grid_type, mirrors, mirror_offset, diffuser, diffuser_height)
-    if not mirrors:
+    if not mirrors and not diffuser:
         sim.plot_report(f"{grid_type}_n{number_lights}_h{height}_w{width}", auto_open=False)
     elif diffuser:
         sim.plot_report(f"diffuse_{grid_type}_n{number_lights}_h{height}_w{width}_off{diffuser_height}", auto_open=False)
