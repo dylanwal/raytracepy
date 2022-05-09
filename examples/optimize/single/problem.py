@@ -3,17 +3,15 @@ import multiprocessing
 
 import numpy as np
 import pandas as pd
-from pymoo.algorithms.moo.nsga2 import NSGA2
 from pymoo.core.problem import Problem
-from pymoo.optimize import minimize
 
 import raytracepy as rpy
 
 from problem import simulation
 
 
-class RayTraceProblem(Problem):
-    def __init__(self, domain: list[dict], n_obj: int = 1, n_constr: int = 0, multiprocessing: bool = False):
+class RayTraceProblem:
+    def __init__(self, domain: list[dict], n_obj: int = 1, n_constr: int = 0, return_value: str = "value"):
         """
 
         Parameters
@@ -21,6 +19,7 @@ class RayTraceProblem(Problem):
         domain
         n_obj
         n_constr
+        return_value
         """
         n_var, xl, xu, indep_args, set_args = self.parse_domain(domain)
         super().__init__(n_var=n_var, n_obj=n_obj, n_constr=n_constr, xl=xl, xu=xu)
@@ -29,8 +28,9 @@ class RayTraceProblem(Problem):
         self.set_args = set_args
         self.function = simulation
         self.multiprocessing = multiprocessing
-        self.df: pd.DataFrame = None
+        self.df = pd.DataFrame(columns=self.indep_args_names + ["mean", "std", "step"])
         self.step = 0
+        self.return_value = return_value
 
     @staticmethod
     def parse_domain(domain: list[dict]):
@@ -63,36 +63,27 @@ class RayTraceProblem(Problem):
 
         return n_var, xl, xu, indep_args, set_args
 
-    def _evaluate(self, x: np.ndarray, out, *args, **kwargs):
-        if self.multiprocessing:
-            with multiprocessing.Pool(os.cpu_count() - 1) as p:
-                results = p.map(self._single_evaluate, x)
-        else:
-            results = self._single_evaluate(x)
+    def _evaluate(self, x: np.ndarray, *args, **kwargs):
+        results = self._single_evaluate(x)
 
         results = np.array(results)
-        out["F"] = np.array(results)
         self._add_data_to_df(x, results)
         self.step += 1
+        return results[1] - results[0]
 
-        # out["G"] =
+
+        if return_value == "value":
+            return self.objective()
+        elif return_value == "pymoo":
+
+            # out["G"] =
 
     def _single_evaluate(self, x):
-        results = []
-        for row in x:
-            sim = self.function({**self._array_to_kwargs(row), **self.set_args})
-            results.append(self.metric(sim))
-
-        return results
+        sim = self.function({**self._array_to_kwargs(x), **self.set_args})
+        return self.metric(sim)
 
     def _add_data_to_df(self, x: np.ndarray, results: np.ndarray):
-        step = np.ones(x.shape[0]) * self.step
-        df = pd.DataFrame(np.column_stack((x, results, step)),
-                          columns=self.indep_args_names + ["mean", "std", "step"])
-        if self.df is None:
-            self.df = df
-        else:
-            self.df = self.df.append(df)
+        self.df.loc[self.step] = [i for i in x] + [i for i in results] + [self.step]
 
     def _array_to_kwargs(self, x: np.ndarray) -> dict:
         return {k: v for k, v in zip(self.indep_args_names, x)}
@@ -106,36 +97,4 @@ class RayTraceProblem(Problem):
 
         mean_ = np.mean(his_array)  # /(sim.total_num_rays / sim.planes["ground"].bins[0] ** 2)
         std = np.std(his_array)  # 100-np.std(his_array)
-        return -mean_, std
-
-
-def main():
-    # Define variables
-    domain = [
-        # continuous
-        {"name": "num_rays", "type": "int", "value": 100_000},
-        {"name": "number_lights", "type": "int", "value": 16},
-        {"name": "mirrors", "type": "bool", "value": True},
-        {"name": "light_height", "type": "float", "min": 1, "max": 15},
-        {"name": "light_width", "type": "float", "min": 5, "max": 15},
-        {"name": "mirror_offset", "type": "float", "min": 0.1, "max": 10},
-        # discrete (always put last)
-        {'name': 'grid_type', 'type': 'discrete', 'items': 'ogrid'},  # ['circle', 'ogrid', 'grid', 'spiral']
-    ]
-
-    problem = RayTraceProblem(domain, n_obj=2)
-    algorithm = NSGA2(pop_size=5)
-
-    res = minimize(problem, algorithm,
-                   ('n_gen', 5),
-                   seed=1,
-                   verbose=True)
-
-    df = pd.DataFrame(np.column_stack((res.X, res.F)), columns=problem.indep_args_names + ["mean", "std"])
-    df.to_csv("nsga2_results.csv")
-    problem.df.to_csv("nsga2_data.csv")
-    print("hi")
-
-
-if __name__ == "__main__":
-    main()
+        return mean_, std

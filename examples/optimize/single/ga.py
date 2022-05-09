@@ -3,9 +3,10 @@ import multiprocessing
 
 import numpy as np
 import pandas as pd
-from pymoo.algorithms.moo.nsga2 import NSGA2
+from pymoo.algorithms.soo.nonconvex.ga import GA
 from pymoo.core.problem import Problem
 from pymoo.optimize import minimize
+from pymoo.util.termination.default import SingleObjectiveDefaultTermination
 
 import raytracepy as rpy
 
@@ -71,9 +72,9 @@ class RayTraceProblem(Problem):
             results = self._single_evaluate(x)
 
         results = np.array(results)
-        out["F"] = np.array(results)
         self._add_data_to_df(x, results)
         self.step += 1
+        out["F"] = results[:, 1] - results[:, 0]
 
         # out["G"] =
 
@@ -106,7 +107,7 @@ class RayTraceProblem(Problem):
 
         mean_ = np.mean(his_array)  # /(sim.total_num_rays / sim.planes["ground"].bins[0] ** 2)
         std = np.std(his_array)  # 100-np.std(his_array)
-        return -mean_, std
+        return mean_, std
 
 
 def main():
@@ -124,16 +125,14 @@ def main():
     ]
 
     problem = RayTraceProblem(domain, n_obj=2)
-    algorithm = NSGA2(pop_size=5)
+    algorithm = GA(pop_size=5, eliminate_duplicates=True)
 
     res = minimize(problem, algorithm,
-                   ('n_gen', 5),
+                   termination=SingleObjectiveDefaultTermination(n_max_evals=25),
                    seed=1,
                    verbose=True)
 
-    df = pd.DataFrame(np.column_stack((res.X, res.F)), columns=problem.indep_args_names + ["mean", "std"])
-    df.to_csv("nsga2_results.csv")
-    problem.df.to_csv("nsga2_data.csv")
+    problem.df.to_csv("ga_data.csv")
     print("hi")
 
 

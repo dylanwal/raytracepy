@@ -190,4 +190,4 @@ fig_control_grid = ff.create_scatterplotmatrix(df_grid, diag='box', index='color
 #######################################################
 #######################################################
 html = df_all.to_html()
-results_html.merge_html_figs([fig_control, fig_control_grid, fig, fig_grid, html], "results.html", auto_open=True)
+results_html.merge_html_figs([fig_control, fig_control_grid, fig, fig_grid, html], "../results.html", auto_open=True)
