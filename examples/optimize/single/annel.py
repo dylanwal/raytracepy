@@ -20,9 +20,9 @@ def main():
 
     problem = RayTraceProblem(domain)
 
-    results = optimize.shgo(problem._evaluate, problem.min_max, options=dict(maxfev=5))
+    results = optimize.dual_annealing(problem._evaluate, problem.min_max, maxiter=15)
 
-    problem.df.to_csv("scipy_data.csv")
+    problem.df.to_csv("anneal_data.csv")
     print("hi")
 
 

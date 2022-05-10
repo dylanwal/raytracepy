@@ -7,11 +7,11 @@ from pymoo.core.problem import Problem
 
 import raytracepy as rpy
 
-from simulation_setup import simulation
+from setup_simulation import simulation
 
 
 class RayTraceProblem(Problem):
-    def __init__(self, domain: list[dict], n_obj: int = 1, n_constr: int = 0, return_value: str = "value"):
+    def __init__(self, domain: list[dict], n_obj: int = 1, n_constr: int = 0, eval_value: str = "value"):
         """
 
         Parameters
@@ -19,7 +19,7 @@ class RayTraceProblem(Problem):
         domain
         n_obj
         n_constr
-        return_value
+        eval_value
         """
         n_var, xl, xu, indep_args, set_args, min_max = self.parse_domain(domain)
         super().__init__(n_var=n_var, n_obj=n_obj, n_constr=n_constr, xl=xl, xu=xu)
@@ -31,7 +31,7 @@ class RayTraceProblem(Problem):
         self.multiprocessing = multiprocessing
         self.df = pd.DataFrame(columns=self.indep_args_names + ["mean", "std", "step"])
         self.step = 0
-        self.return_value = return_value
+        self.return_value = eval_value
 
     @staticmethod
     def parse_domain(domain: list[dict]):
@@ -66,24 +66,28 @@ class RayTraceProblem(Problem):
 
         return n_var, xl, xu, indep_args, set_args, min_max
 
-    def _evaluate(self, x: np.ndarray, *args, **kwargs):
-        results = self._single_evaluate(x)
+    def _evaluate(self, x: (list, np.ndarray), *args, **kwargs):
+        # do calculations
+        if (isinstance(x, np.ndarray) and len(x.shape) == 1) or (isinstance(x, list) and not isinstance(x[0], list)):
+            results = self._single_evaluate(x)
+            results = np.array(results)
+            self._add_data_to_df(x, results)
+        else:
+            raise NotImplemented
 
-        results = np.array(results)
-        self._add_data_to_df(x, results)
         self.step += 1
-
+        # return value
         if self.return_value == "value":
-            return self.objective()
+            return self.objective(results)
         elif self.return_value == "pymoo":
-            args["F"] = self.objective()
+            args["F"] = self.objective(results)
             # out["G"] =
 
     def _single_evaluate(self, x):
         sim = self.function({**self._array_to_kwargs(x), **self.set_args})
         return self.metric(sim)
 
-    def _add_data_to_df(self, x: np.ndarray, results: np.ndarray):
+    def _add_data_to_df(self, x, results):
         self.df.loc[self.step] = [i for i in x] + [i for i in results] + [self.step]
 
     def _array_to_kwargs(self, x: np.ndarray) -> dict:
