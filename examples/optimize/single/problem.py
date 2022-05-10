@@ -7,10 +7,10 @@ from pymoo.core.problem import Problem
 
 import raytracepy as rpy
 
-from problem import simulation
+from simulation_setup import simulation
 
 
-class RayTraceProblem:
+class RayTraceProblem(Problem):
     def __init__(self, domain: list[dict], n_obj: int = 1, n_constr: int = 0, return_value: str = "value"):
         """
 
@@ -21,8 +21,9 @@ class RayTraceProblem:
         n_constr
         return_value
         """
-        n_var, xl, xu, indep_args, set_args = self.parse_domain(domain)
+        n_var, xl, xu, indep_args, set_args, min_max = self.parse_domain(domain)
         super().__init__(n_var=n_var, n_obj=n_obj, n_constr=n_constr, xl=xl, xu=xu)
+        self.min_max = min_max
         self.indep_args = indep_args
         self.indep_args_names = [var["name"] for var in self.indep_args]
         self.set_args = set_args
@@ -43,6 +44,7 @@ class RayTraceProblem:
         xu = []
         set_args = {}
         indep_args = []
+        min_max = []
         for var in domain:
             if "value" in var:
                 set_args[var["name"]] = var["value"]
@@ -55,13 +57,14 @@ class RayTraceProblem:
                     n_var += 1
                     xl.append(var["min"])
                     xu.append(var["max"])
+                    min_max.append([var["min"], var["max"]])
                     indep_args.append(var)
             elif var["type"] == "int":
                 set_args[var["name"]] = var["min"]
             elif var["type"] == "discrete":
                 set_args[var["name"]] = var["items"]
 
-        return n_var, xl, xu, indep_args, set_args
+        return n_var, xl, xu, indep_args, set_args, min_max
 
     def _evaluate(self, x: np.ndarray, *args, **kwargs):
         results = self._single_evaluate(x)
@@ -69,13 +72,11 @@ class RayTraceProblem:
         results = np.array(results)
         self._add_data_to_df(x, results)
         self.step += 1
-        return results[1] - results[0]
 
-
-        if return_value == "value":
+        if self.return_value == "value":
             return self.objective()
-        elif return_value == "pymoo":
-
+        elif self.return_value == "pymoo":
+            args["F"] = self.objective()
             # out["G"] =
 
     def _single_evaluate(self, x):
@@ -98,3 +99,6 @@ class RayTraceProblem:
         mean_ = np.mean(his_array)  # /(sim.total_num_rays / sim.planes["ground"].bins[0] ** 2)
         std = np.std(his_array)  # 100-np.std(his_array)
         return mean_, std
+
+    def objective(self, results):
+        return results[1] - results[0]
