@@ -11,7 +11,7 @@ import warnings
 import numpy as np
 import plotly.graph_objs as go
 
-from . import dtype, default_plot_layout
+from . import dtype, default_plot_layout, config
 
 
 class PointPattern(ABC):
@@ -372,9 +372,10 @@ class OffsetGridPattern(PointPattern):
             self.num_points = y_count
 
         if self.num_points != num_points:
-            warnings.warn(
-                f"'num_points' changed! The given num_points ({num_points}) was adjusted/set to "
-                f"{self.num_points} to get a complete pattern.")
+            if config.warning_ogrid:
+                warnings.warn(
+                    f"'num_points' changed! The given num_points ({num_points}) was adjusted/set to "
+                    f"{self.num_points} to get a complete pattern.")
 
     @staticmethod
     def _calc_num_points_offset_grid(x_count):

@@ -1,8 +1,11 @@
+from raytracepy.config import config
+
 import os
 dtype = "float64"
 
-from numba import njit, config  # import all numba stuff here so it can be toggled on/off
-config.DISABLE_JIT = False
+import numba  # import all numba stuff here so it can be toggled on/off
+njit = numba.njit
+numba.config.DISABLE_JIT = False
 
 from functools import wraps
 from time import time
