@@ -8,7 +8,7 @@ import numpy as np
 
 def main():
     # define lights
-    height = 5
+    height = 10
     light = rpy.Light(
         position=np.array([0, 0, height], dtype='float64'),
         direction=np.array([0, 0, -1], dtype='float64'),
@@ -21,55 +21,56 @@ def main():
         name="ground",
         position=np.array([0, 0, 0], dtype='float64'),
         normal=np.array([0, 0, 1], dtype='float64'),
-        length=15,
-        width=15,
+        length=10,
+        width=10,
         transmit_type="absorb",
     )
 
-    box_dim = 15
+    box_dim = 10
+    box_height = height
     mirror_left = rpy.Plane(
         name="mirror_left",
-        position=np.array([-box_dim / 2, 0, box_dim / 2], dtype='float64'),
+        position=np.array([-box_dim / 2, 0, box_height / 2], dtype='float64'),
         normal=np.array([1, 0, 0], dtype='float64'),
         length=box_dim,
-        width=box_dim,
+        width=box_height,
         transmit_type="reflect",
         reflect_func=4,
     )
     mirror_right = rpy.Plane(
         name="mirror_right",
-        position=np.array([box_dim / 2, 0, box_dim / 2], dtype='float64'),
+        position=np.array([box_dim / 2, 0, box_height / 2], dtype='float64'),
         normal=np.array([-1, 0, 0], dtype='float64'),
         length=box_dim,
-        width=box_dim,
+        width=box_height,
         transmit_type="reflect",
         reflect_func=4,
     )
     mirror_front = rpy.Plane(
         name="mirror_front",
-        position=np.array([0, -box_dim / 2, box_dim / 2], dtype='float64'),
+        position=np.array([0, -box_dim / 2, box_height / 2], dtype='float64'),
         normal=np.array([0, 1, 0], dtype='float64'),
         length=box_dim,
-        width=box_dim,
+        width=box_height,
         transmit_type="reflect",
         reflect_func=4,
     )
     mirror_back = rpy.Plane(
         name="mirror_back",
-        position=np.array([0, box_dim / 2, box_dim / 2], dtype='float64'),
+        position=np.array([0, box_dim / 2, box_height / 2], dtype='float64'),
         normal=np.array([0, -1, 0], dtype='float64'),
         length=box_dim,
-        width=box_dim,
+        width=box_height,
         transmit_type="reflect",
         reflect_func=4,
     )
     top = rpy.Plane(
         name="top",
-        position=np.array([0, 0, height+0.01], dtype='float64'),
+        position=np.array([0, 0, box_height], dtype='float64'),
         normal=np.array([0, 0, -1], dtype='float64'),
         length=box_dim,
         width=box_dim,
-        transmit_type="absorb",
+        transmit_type="reflect",
         reflect_func=6,
     )
 

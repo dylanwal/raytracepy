@@ -198,8 +198,8 @@ def main():
     df = pd.DataFrame(all_combinations, columns=sim_args)
 
     # run all combinations
-    from multiprocessing import Pool
-    with Pool(14) as p:
+    from multiprocessing import Pool, cpu_count
+    with Pool(cpu_count()-1) as p:
         output = p.map(simulation, all_combinations)
 
     # save output

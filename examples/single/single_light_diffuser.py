@@ -40,13 +40,13 @@ def main():
     sim = rpy.RayTrace(
         planes=planes,
         lights=light,
-        total_num_rays=5_000_000,
+        total_num_rays=1_000_000,
         bounce_max=1  # needs at least one bounce to make through the diffuser
     )
     sim.run()
 
     file_name = "diffuser"
-    sim.save_data(file_name)
+    # sim.save_data(file_name)
 
     # print stats
     sim.stats()
