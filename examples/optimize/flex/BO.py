@@ -14,6 +14,10 @@ def metric(sim: rpy.RayTrace):
 
     return std - mean_
 
+def metric2(sim: rpy.RayTrace):
+
+    return std/mean_
+
 
 def main():
     problem = fo.Problem(

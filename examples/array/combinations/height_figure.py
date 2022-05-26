@@ -54,9 +54,9 @@ def main():
                        ax=-.2, ay=-.7, axref="x", ayref="y", arrowwidth=3, arrowcolor="black",
                        text="<b>circle light<br>source<b>",  showarrow=True, arrowhead=2)
     fig.add_annotation(x=1, y=-0.8, text="<b>d/r > 10<br>inverse square law error < 1 %<b>", showarrow=False,
-                       textangle=90, font=dict(size=12))
+                       textangle=90, font=dict(size=14))
     fig.add_annotation(x=-1, y=-0.8, text="<b>d/r < 0.1<br>area source error < 1 %<b>", showarrow=False,
-                   textangle=90, font=dict(size=12))
+                   textangle=90, font=dict(size=14))
 
 
     # formatting
