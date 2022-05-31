@@ -4,6 +4,7 @@ pyproject.toml
 setup.cfg
 setup.py
 src/raytracepy/__init__.py
+src/raytracepy/config.py
 src/raytracepy/core.py
 src/raytracepy/light.py
 src/raytracepy/light_layouts.py

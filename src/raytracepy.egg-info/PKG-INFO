@@ -9,9 +9,8 @@ Platform: any
 Classifier: License :: OSI Approved :: BSD License
 Classifier: Programming Language :: Python :: 3
 Classifier: Programming Language :: Python :: 3 :: Only
-Classifier: Programming Language :: Python :: 3.9
 Classifier: Programming Language :: Python :: 3.10
-Requires-Python: >=3.9
+Requires-Python: >=3.10
 Description-Content-Type: text/markdown
 License-File: LICENSE.txt
 
@@ -22,4 +21,3 @@ This simple
 
 Limitations:
 * Geometry is limited only to vertical and horizontal planes.
-

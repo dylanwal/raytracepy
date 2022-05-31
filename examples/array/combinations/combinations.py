@@ -199,7 +199,7 @@ def main():
 
     # run all combinations
     from multiprocessing import Pool, cpu_count
-    with Pool(cpu_count()-1) as p:
+    with Pool(cpu_count()) as p:
         output = p.map(simulation, all_combinations)
 
     # save output

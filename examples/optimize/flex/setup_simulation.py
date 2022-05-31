@@ -145,4 +145,6 @@ def simulation(params: dict = None, **kwargs):
 
     mean_ = np.mean(his_array)  # /(sim.total_num_rays / sim.planes["ground"].bins[0] ** 2)
     std = np.std(his_array)  # 100-np.std(his_array)
+    p10 = np.percentile(his_array, 10)
+    p90 = np.percentile(his_array, 90)
     return mean_, std, p10, p90

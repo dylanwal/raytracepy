@@ -164,4 +164,4 @@ def main4():
 
 
 if __name__ == "__main__":
-    main()
+    main3()
