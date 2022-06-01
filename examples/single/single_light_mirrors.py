@@ -8,12 +8,12 @@ import numpy as np
 
 def main():
     # define lights
-    height = 10
+    height = 5
     light = rpy.Light(
         position=np.array([0, 0, height], dtype='float64'),
         direction=np.array([0, 0, -1], dtype='float64'),
         num_traces=100,
-        theta_func=0
+        theta_func=1
     )
 
     # define planes
@@ -24,6 +24,7 @@ def main():
         length=10,
         width=10,
         transmit_type="absorb",
+        bins=(200, 200)
     )
 
     box_dim = 10
@@ -64,30 +65,21 @@ def main():
         transmit_type="reflect",
         reflect_func=4,
     )
-    top = rpy.Plane(
-        name="top",
-        position=np.array([0, 0, box_height], dtype='float64'),
-        normal=np.array([0, 0, -1], dtype='float64'),
-        length=box_dim,
-        width=box_dim,
-        transmit_type="reflect",
-        reflect_func=6,
-    )
 
     # Important note** ground should be last in list! RayTrace simulation evaluates ray hits in order of plane list
-    planes = [top, mirror_left, mirror_right, mirror_front, mirror_back, ground]
+    planes = [mirror_left, mirror_right, mirror_front, mirror_back, ground]
 
     # Create sim and run it
     sim = rpy.RayTrace(
         planes=planes,
         lights=light,
         total_num_rays=5_000_000,
-        bounce_max=20
+        bounce_max=10
     )
     sim.run()
 
-    file_name = "mirror_wide"
-    # sim.save_data(file_name)
+    file_name = "mirror"
+    sim.save_data(file_name)
 
     # print stats
     sim.stats()

@@ -34,7 +34,7 @@ def main():
     sim = rpy.RayTrace(
         planes=ground,
         lights=light,
-        total_num_rays=10_000_000
+        total_num_rays=3_000_000
     )
     sim.run()
 
