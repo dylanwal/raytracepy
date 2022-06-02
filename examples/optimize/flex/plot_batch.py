@@ -1,4 +1,5 @@
 import glob
+import time
 
 import numpy as np
 import pandas as pd
@@ -137,7 +138,7 @@ class VizBatch:
                        mode="markers+lines", line=dict(width=1)
                        ))
 
-    def plot_4d_vis(self, indept_var: list[str] = None, metric_vis: str = "color", **kwargs) -> go.Figure:
+    def plot_4d_vis(self, indept_var: list[str] = None, metric_vis: str = "color", cut_off: float=None, **kwargs) -> go.Figure:
         if len(self.df) < 4:
             raise ValueError("3 independent variable are required to visualized in 4D.")
 
@@ -155,21 +156,65 @@ class VizBatch:
         else:
             raise ValueError("Invalid metric_vis value.")
 
-        fig = px.scatter_3d(self.df, x=cols[0], y=cols[1], z=cols[2], color=cols[3], **kwargs)
+        if cut_off is not None:
+            df = self.df[self.df["metric"] < cut_off]
+        else:
+            df = self.df
+
+        fig = px.scatter_3d(df, x=cols[0], y=cols[1], z=cols[2], color=cols[3], hover_data=self.df.columns, **kwargs)
         return fig
+
+    def matrix_plot(self):
+        # return px.scatter_matrix(self.df)
+
+        dimensions = [dict(label=col, values=self.df[col]) for col in self.df.columns]
+        fig = go.Figure(data=go.Splom(
+                    dimensions=dimensions,
+                    showupperhalf=False, # remove plots on diagonal
+                    diagonal=dict(visible=False),
+                    hoverinfo="all"
+                    # text=self.df['class'],
+                    # marker=dict(color=index_vals,
+                    #             showscale=False, # colors encode categorical variables
+                    #             line_color='white', line_width=0.5)
+                    ))
+        return fig
+
+    def replace_columns(self, replacements: list[list[str]]):
+        columns = self.df.columns
+        for replace in replacements:
+            columns = [replace[1] if x == replace[0] else x for x in columns]
+
+        self.df.columns = columns
+        for data in self.data:
+            data.columns = columns
 
 
 def main():
     file_name = "hypercube/MethodLatinHypercube_*.csv"
     file_name = "BO/MethodBODragon_*.csv"
+    file_name = "sobol_no_mirror/MethodSobol_no_mirror_*.csv"
+    # file_name = "random/MethodRandom_*.csv"
+    # file_name  = "BO_no_mirror/MethodBODragon_no_mirror_*.csv"
+    file_name = "factorial_no_mirror/Factorial_*.csv"
 
     vizbatch = VizBatch(file_name)
-    fig = vizbatch.plot_by_expt_best()
-    fig.add_trace(go.Scatter(x=[0, 27], y=[0.103, 0.103], mode="lines", line=dict(width=2, color='red', dash='dash')))
-    fig.show()
+    vizbatch.replace_columns([["inter_0", "mean"], ["inter_1", "std"], ["inter_2", "p10"], ["inter_3", "p90"]])
+    vizbatch.df = vizbatch.df.drop(columns=["p10", "p90"])
 
-    fig1 = vizbatch.plot_4d_vis(range_color=(0, 0.2))
+    # fig = vizbatch.plot_by_expt_best()
+    # # fig.add_trace(go.Scatter(x=[0, 27], y=[0.103, 0.103], mode="lines", line=dict(width=2, color='red', dash='dash')))
+    # fig.add_trace(go.Scatter(x=[0, 27], y=[0.2294, 0.2294], mode="lines", line=dict(width=2, color='red', dash='dash')))
+    # fig.show()
+
+    time.sleep(1)
+    fig1 = vizbatch.plot_4d_vis() # cut_off=10.2, range_color=(0.165, 0.167)
     fig1.show()
+
+    time.sleep(1)
+    # vizbatch.df = vizbatch.df.drop(columns=["iteration"])
+    fig2 = vizbatch.matrix_plot()
+    fig2.show()
 
 
 if __name__ == "__main__":

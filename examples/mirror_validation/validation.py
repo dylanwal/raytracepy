@@ -57,10 +57,6 @@ def abs_e3(light_height, x, y, xmin, xmax, ymin, ymax, mirror_eff, xy_led, num_r
     for i in range(n):
         x_M[i] = xmin + (i - num_reflect) * dx + (i % 2) * (x - xmin) + (xmax - x) - (i % 2) * (xmax - x)
         y_M[i] = ymin + (i - num_reflect) * dy + (i % 2) * (y - ymin) + (ymax - y) - (i % 2) * (ymax - y)
-    # i = np.linspace(1, n, n)
-    # x_M = xmin + (i - num_reflect) * dx + i % 2 * (x - xmin) + (xmax - x) - i % 2 * (xmax - x)
-    # y_M = ymin + (i - num_reflect) * dy + i % 2 * (y - ymin) + (ymax - y) - i % 2 * (ymax - y)
-    
 
     E = 0
     for i in range(n):
@@ -113,30 +109,30 @@ def run(light_height: float = 10, light_width: float = 10, number_lights: int = 
         num_reflect: int = 50):
     xy_led = get_light_xy(grid_type, light_width, number_lights)
     e_p2t = main_loop(light_height, surface_width, surface_length, xy_led, mirror_eff, resolution, num_reflect)
-    return e_p2t # / np.mean(np.mean(e_p2t))
+    return e_p2t
 
 
 def main():
-    box = 50
+    box = 100
     light_height = box/2
     light_width = 0
     number_lights = 1
     grid_type = "ogrid"
-    resolution = 100
+    resolution = 50
     mirror_eff = 0.85
     surface_width = box
     surface_length = box
-    num_reflect = 10
+    num_reflect = 50
 
     heatmap = run(light_height, light_width, number_lights, grid_type, resolution, mirror_eff, surface_width,
                   surface_length, num_reflect)
 
-    np.savetxt("heatmap_single.csv", heatmap, delimiter=",")
+    # np.savetxt("heatmap_valid.csv", heatmap, delimiter=",")
 
     fig = go.Figure()
     x = np.linspace(-5, 5, resolution)
     y = np.linspace(-5, 5, resolution)
-    fig.add_trace(go.Heatmap(x=x, y=y, z=heatmap/np.mean(np.mean(heatmap)), zsmooth="fast"))
+    fig.add_trace(go.Heatmap(x=x, y=y, z=heatmap/np.mean(np.mean(heatmap))))
 
     fig.update_layout(autosize=False, width=800, height=600, font=dict(family="Arial", size=18, color="black"),
                       plot_bgcolor="white", showlegend=True, legend=dict(x=.4, y=.95))
@@ -147,24 +143,8 @@ def main():
                      linewidth=5, mirror=True, linecolor='black', ticks="outside", tickwidth=4, showgrid=False,
                      gridwidth=1, gridcolor="lightgray")
 
-    fig.write_html("temp.html", auto_open=True)
-    calc(heatmap)
-    print("hi")
-
-
-def calc(heatmap = None):
-    # heatmap = np.loadtxt(open("heatmap_single.csv", "rb"), delimiter=",")
-    his_array = np.reshape(heatmap,
-                           (heatmap.shape[0] * heatmap.shape[1],))
-    mean_ = np.mean(his_array)
-    std = np.std(his_array)
-    p10 = np.percentile(his_array, 10)
-    p90 = np.percentile(his_array, 90)
-    print(f"mean: {mean_}, std: {std},  p10: {p10}, p90: {p90}, max: {np.max(his_array)}, min: {np.min(his_array)}")
-    print(f"mean: {mean_}, std: {std/mean_},  p10: {p10/mean_}, p90: {p90/mean_}, max: {np.max(his_array)/mean_}, "
-          f"min: {np.min(his_array)/mean_}")
+    fig.show()
 
 
 if __name__ == "__main__":
     main()
-    # calc()

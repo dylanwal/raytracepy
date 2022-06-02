@@ -109,7 +109,7 @@ def uniform_cdf():
     """ Cumulative distribution function for uniform point source. """
     x = np.array([  # radian
         0,
-        np.pi/2
+        np.pi / 2
     ],
         dtype=dtype)
     cdf = np.array([
@@ -205,7 +205,7 @@ def sphere_correction(x: np.ndarray) -> np.ndarray:
     Turns [0, 1] to [0, 1] re-distributed to account for sphere.
     * only can be re-mapped to [0, np.pi/2]
     """
-    return np.arccos(x)/(np.pi/2)
+    return np.arccos(x) / (np.pi / 2)
 
 
 @njit  # ("f8[:](f8,f8[:],i4)")

@@ -73,8 +73,8 @@ def main():
     sim = rpy.RayTrace(
         planes=planes,
         lights=light,
-        total_num_rays=5_000_000,
-        bounce_max=20
+        total_num_rays=50_000_000,
+        bounce_max=50
     )
     sim.run()
 
@@ -85,6 +85,7 @@ def main():
     sim.stats()
     ground.hit_stats()
     ground.hit_stats(True)
+    np.savetxt("heatmap_raytrace.csv", ground.histogram.values, delimiter=",")
 
     # plotting
     sim.plot_report(file_name)

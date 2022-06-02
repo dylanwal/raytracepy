@@ -44,7 +44,7 @@ def main():
         variables=[
             fo.ContinuousVariable(name="light_height", min_=1, max_=15),
             fo.ContinuousVariable(name="light_width", min_=5, max_=15),
-            fo.ContinuousVariable(name="mirror_offset", min_=0.1, max_=10),
+            # fo.ContinuousVariable(name="mirror_offset", min_=0.1, max_=10),
             # fo.DiscreteVariable(name='grid_type', items=['circle', 'ogrid', 'grid', 'spiral'])
         ],
         kwargs=dict(
@@ -58,21 +58,21 @@ def main():
         pass_kwargs=False
     )
 
-    method = fo.methods.MethodBFGS(
+    method = fo.methods.MethodSobol(
         problem=problem,
-        x0 = [8, 10, 5],
+        # x0 = [3, 11.5, 5],
         stop_criterion=fo.stop_criteria.StopFunctionEvaluation(27))
 
     # run single
-    method.run()
-    method.recorder.df.to_csv("BFGS_no_mirror_1.csv")
-    vis = fo.VizOptimization(method.recorder)
-    fig = vis.plot_4d_vis()
-    fig.write_html("temp.html", auto_open=True)
+    # method.run()
+    method.recorder.df.to_csv("Factorial_no_mirror.csv")
+    # vis = fo.VizOptimization(method.recorder)
+    # fig = vis.plot_4d_vis()
+    # fig.write_html("temp.html", auto_open=True)
 
     # run multiple
     # batch = Batch(method, num_repeat=10)
-    # batch.run(multiprocess=True)
+    # batch.run()
 
 
 if __name__ == '__main__':
