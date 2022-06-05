@@ -17,9 +17,9 @@ def define_planes(light_height: float = 5, mirrors: bool = False, length: float 
         )
 
     if mirrors:
-        if 'light_width' in kwargs and "mirror_offset" in kwargs:
+        if 'light_width' in kwargs and "box_offset" in kwargs:
             # mirror box can't be smaller than the area of interest
-            box_dim = max([width, kwargs["light_width"] + kwargs["mirror_offset"]])
+            box_dim = max([width, kwargs["light_width"] + kwargs["box_offset"]])
         else:
             box_dim = width
 
@@ -122,9 +122,8 @@ def define_lights(grid_type: str = "ogrid", light_height: float = 5, light_width
     return lights
 
 
-def simulation(params: dict = None, **kwargs):
-    # print("simulation running")
-    params = {k: v for k, v in zip(kwargs["param_names"], params)}
+def simulation(params: dict = None, **kwargs) -> rpy.RayTrace:
+    print("simulation running")
     if params is None:
         params = kwargs
     else:
@@ -138,13 +137,5 @@ def simulation(params: dict = None, **kwargs):
         bounce_max=10,
     )
     sim.run()
-    # calculate dependent parameters
-    histogram = sim.planes["ground"].histogram
-    his_array = np.reshape(histogram.values,
-                           (histogram.values.shape[0] * histogram.values.shape[1],))
 
-    mean_ = np.mean(his_array)  # /(sim.total_num_rays / sim.planes["ground"].bins[0] ** 2)
-    std = np.std(his_array)  # 100-np.std(his_array)
-    p10 = np.percentile(his_array, 10)
-    p90 = np.percentile(his_array, 90)
-    return mean_, std, p10, p90
+    return sim
