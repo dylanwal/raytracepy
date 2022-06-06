@@ -5,7 +5,6 @@ import numpy as np
 import pandas as pd
 import plotly.graph_objs as go
 import plotly.express as px
-from plotly_gif import GIF
 
 
 def _load_files(file_name: str) -> list[pd.DataFrame]:
@@ -17,9 +16,10 @@ def _load_files(file_name: str) -> list[pd.DataFrame]:
 
 
 def list_of_df_to_numpy(list_df: list[pd.DataFrame], col: str) -> np.ndarray:
-    data = np.empty((len(list_df), list_df[0].index.size))
+    min_length = min([df.shape[0] for df in list_df])
+    data = np.empty((len(list_df), min_length))
     for i, df in enumerate(list_df):
-        data[i, :] = df[col].to_numpy()
+        data[i, :] = df[col].to_numpy()[:min_length]
 
     return data
 
@@ -106,13 +106,20 @@ class VizBatch:
 
         return fig
 
-    def plot_by_expt_best(self) -> go.Figure:
+    def plot_by_expt_best(self, best_value: float = None) -> go.Figure:
         fig = go.Figure()
+
         for df in self.data:
             _get_best(df)
 
-        x = self.data[0].index.to_numpy()
+        min_length = min([df.shape[0] for df in self.data])
+        x = np.linspace(1, min_length, min_length)
         lb, ub = _get_bounds(self.data, "best")
+
+        if best_value is not None:
+            fig.add_trace(go.Scatter(x=[0, x[-1]], y=[best_value, best_value], name= "global min",
+                                     mode="lines", line=dict(width=2, color='red', dash='dash')))
+
         fig.add_trace(
             go.Scatter(x=x, y=lb, name="lower_bound", legendgroup="best", showlegend=False,
                        mode="lines", line=dict(width=1, color="gray"),
@@ -125,10 +132,20 @@ class VizBatch:
                        )
         )
         fig.add_trace(
-            go.Scatter(x=x, y=_average_by_expt(self.data, "best"), name="best", legendgroup="best", showlegend=False,
+            go.Scatter(x=x, y=_average_by_expt(self.data, "best"), name="average", legendgroup="best", showlegend=True,
                        mode="markers+lines", line=dict(width=3, color="black"),
                        )
         )
+
+        # formatting
+        fig.update_layout(autosize=False, width=800, height=600, font=dict(family="Arial", size=18, color="black"),
+                          plot_bgcolor="white", showlegend=True, legend=dict(x=.75, y=.95))
+        fig.update_xaxes(title="<b>function evaluation </b>", tickprefix="<b>", ticksuffix="</b>", showline=True,
+                         linewidth=5, mirror=True, linecolor='black', ticks="outside", tickwidth=4, showgrid=False,
+                         gridwidth=1, gridcolor="lightgray", range=[0, 25])
+        fig.update_yaxes(title="<b>std/mean</b>", tickprefix="<b>", ticksuffix="</b>", showline=True,
+                         linewidth=5, mirror=True, linecolor='black', ticks="outside", tickwidth=4, showgrid=False,
+                         gridwidth=1, gridcolor="lightgray", range=[0.15, 0.3])
 
         return fig
 
@@ -166,8 +183,6 @@ class VizBatch:
         return fig
 
     def matrix_plot(self):
-        # return px.scatter_matrix(self.df)
-
         dimensions = [dict(label=col, values=self.df[col]) for col in self.df.columns]
         fig = go.Figure(data=go.Splom(
                     dimensions=dimensions,
@@ -191,36 +206,28 @@ class VizBatch:
             data.columns = columns
 
 
-def gif_df(gif_: GIF, df: pd.DataFrame, x_col: str, y_col: str, z_col:str, t_col: str):
-    t_values = np.sort(df[t_col].unique())
-    x = df["light_height"].unique()
-    y = df["light_width"].unique()
-    x = np.sort(x)
-    y = np.sort(y)
-    for t in t_values:
-        fig = go.Figure()
-        df_local = df[df[t_col] == t]
-        z = np.empty((len(x), len(y)))
-        for i in range(len(x)):
-            for ii in range(len(x)):
-                z[ii, i] = df_local[z_col].loc[(df_local[x_col] == x[i]) & (df_local[y_col] == y[ii])]
-
-        fig.add_trace(go.Surface(x=x, y=y, z=z))
-        gif_.create_image(fig)
-
-
 def main():
-    file_name = "Factorial_mirror.csv"
-    df = pd.read_csv(file_name, index_col=0)
-    cols = ["light_height","light_width","mirror_offset","inter_0","inter_1","inter_2", "inter_3", "metric"]
+    # file_name = "no_mirror/nelder_mead/MethodNelderMead_no_mirror_*.csv"
+    # file_name = "no_mirror/sobol/MethodSobol_no_mirror_*.csv"
+    # file_name = "no_mirror/powell/MethodPowell_no_mirror_*.csv"
+    file_name = "no_mirror/dragonfly/MethodBODragon_no_mirror_*.csv"
+    file_name = "no_mirror/hypercube/MethodLatinHypercube_no_mirror_*.csv"
 
-    df = df[df["metric"] < 0.2]
-    fig = px.scatter_3d(df, x=cols[0], y=cols[1], z=cols[2], color=cols[-1], hover_data=df.columns)
-    fig.write_html("temp.html", auto_open=True)
+    vizbatch = VizBatch(file_name)
+    vizbatch.replace_columns([["inter_0", "mean"], ["inter_1", "std"], ["inter_2", "p10"], ["inter_3", "p90"]])
+    vizbatch.df = vizbatch.df.drop(columns=["p10", "p90"])
 
-    # gif = GIF(mode="png", image_path="imgs")
-    # gif_df(gif, df, x_col=cols[0], y_col=cols[1], z_col=cols[-1], t_col=cols[2])
-    # gif.create_gif()
+    fig = vizbatch.plot_by_expt_best(best_value=0.166)
+    fig.show()
+
+    # time.sleep(1)
+    # fig1 = vizbatch.plot_4d_vis() # cut_off=10.2, range_color=(0.165, 0.167)
+    # fig1.show()
+
+    # time.sleep(1)
+    # vizbatch.df = vizbatch.df.drop(columns=["iteration"])
+    # fig2 = vizbatch.matrix_plot()
+    # fig2.show()
 
 
 if __name__ == "__main__":

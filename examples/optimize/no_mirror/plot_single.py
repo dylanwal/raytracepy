@@ -16,7 +16,7 @@ def responce_surface():
             z[ii, i] = df["metric"].loc[(df["light_height"]==x[i]) & (df["light_width"]==y[ii])]
 
     fig = go.Figure()
-    fig.add_trace(go.Surface(x=x, y=y, z=z))
+    fig.add_trace(go.Surface(x=x, y=y, z=z, colorbar=dict(title="std/mean")))
 
 
     return fig, df
@@ -24,7 +24,7 @@ def responce_surface():
 
 
 def main():
-    df = pd.read_csv("Powell2_no_mirror.csv", index_col=0)
+    df = pd.read_csv("nelder_mead/MethodNelderMead_no_mirror_0.csv", index_col=0)
 
     offset = 0.005
     fig, df_full = responce_surface()
@@ -33,7 +33,7 @@ def main():
                                                                                                     width=2)))
     start = df.iloc[0]
     fig.add_trace(go.Scatter3d(x=[start["light_height"]], y=[start["light_width"]], z=[start["metric"] + offset], mode="markers",
-                               marker=dict(color="white", size=6), name="start"))
+                               marker=dict(color="cyan", size=6), name="start"))
     best = df.loc[df["metric"].idxmin()]
     fig.add_trace(go.Scatter3d(x=[best["light_height"]], y=[best["light_width"]], z=[best["metric"] + offset], mode="markers",
                                marker=dict(color="red", size=6), name="best"))
@@ -47,6 +47,13 @@ def main():
                       plot_bgcolor="white", showlegend=True, legend=dict(x=.1, y=.95),
                       scene=dict(xaxis_title="<b>light height (cm)</b>", yaxis_title="<b>light width (cm)</b>",
                                  zaxis_title="<b>std/mean</b>"))
+
+    camera = dict(
+    up=dict(x=0, y=0, z=1),
+    center=dict(x=0, y=0, z=-0.2),
+    eye=dict(x=1.25, y=1.25, z=1.25)
+    )
+    fig.update_layout(scene_camera=camera)
 
     fig.write_html("temp.html", auto_open=True)
 

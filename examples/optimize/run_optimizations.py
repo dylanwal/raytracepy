@@ -45,35 +45,35 @@ def main():
             fo.ContinuousVariable(name="light_height", min_=1, max_=15),
             fo.ContinuousVariable(name="light_width", min_=5, max_=15),
             # fo.ContinuousVariable(name="mirror_offset", min_=0.1, max_=10),
-            fo.DiscreteVariable(name='grid_type', items=['circle', 'ogrid', 'grid', 'spiral'])
+            # fo.DiscreteVariable(name='grid_type', items=['circle', 'ogrid', 'grid', 'spiral'])
         ],
         kwargs=dict(
             num_rays=100_000,
             number_lights=16,
-            mirrors=True,
+            mirrors=False,
             grid_type='ogrid',
-            param_names=["light_height", "light_width", "mirror_offset"]
+            param_names=["light_height", "light_width"]
         ),
         metric=metric,
         pass_kwargs=False
     )
 
-    method = fo.methods.MethodFactorial(
+    method = fo.methods.MethodLatinHypercube(
         problem=problem,
-        levels = 10, multiprocess=True)
-        # x0 = [10, 10],
-        # stop_criterion=fo.stop_criteria.StopFunctionEvaluation(27))
+        # x0=[8, 10],
+        stop_criterion=fo.stop_criteria.StopFunctionEvaluation(25),
+    )
 
     # run single
     # method.run()
-    method.recorder.df.to_csv("Factorial_mirror.csv")
+    # method.recorder.df.to_csv("dragon_no_mirror_long_init.csv")
     # vis = fo.VizOptimization(method.recorder)
     # fig = vis.plot_4d_vis()
     # fig.write_html("temp.html", auto_open=True)
 
     # run multiple
-    # batch = Batch(method, num_repeat=10)
-    # batch.run()
+    batch = Batch(method, num_repeat=10)
+    batch.run(multiprocess=True)
 
 
 if __name__ == '__main__':
