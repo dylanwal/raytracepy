@@ -1,7 +1,7 @@
 from numba.pycc import CC
 from numba import njit
 
-cc = CC('test')
+cc = CC('math_custom')
 cc.verbose = True
 
 

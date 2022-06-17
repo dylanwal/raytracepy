@@ -24,27 +24,27 @@ def responce_surface():
 
 
 def main():
-    df = pd.read_csv("nelder_mead/MethodNelderMead_no_mirror_0.csv", index_col=0)
+    # df = pd.read_csv("nelder_mead/MethodNelderMead_no_mirror_0.csv", index_col=0)
 
     offset = 0.005
     fig, df_full = responce_surface()
-    fig.add_trace(go.Scatter3d(x=df["light_height"], y=df["light_width"], z=df["metric"] + offset, name="optimization path",
-                               mode="lines+markers", marker=dict(color="yellow", size=4), line=dict(color="yellow",
-                                                                                                    width=2)))
-    start = df.iloc[0]
-    fig.add_trace(go.Scatter3d(x=[start["light_height"]], y=[start["light_width"]], z=[start["metric"] + offset], mode="markers",
-                               marker=dict(color="cyan", size=6), name="start"))
-    best = df.loc[df["metric"].idxmin()]
-    fig.add_trace(go.Scatter3d(x=[best["light_height"]], y=[best["light_width"]], z=[best["metric"] + offset], mode="markers",
-                               marker=dict(color="red", size=6), name="best"))
-
+    # fig.add_trace(go.Scatter3d(x=df["light_height"], y=df["light_width"], z=df["metric"] + offset, name="optimization path",
+    #                            mode="lines+markers", marker=dict(color="yellow", size=4), line=dict(color="yellow",
+    #                                                                                                 width=2)))
+    # start = df.iloc[0]
+    # fig.add_trace(go.Scatter3d(x=[start["light_height"]], y=[start["light_width"]], z=[start["metric"] + offset], mode="markers",
+    #                            marker=dict(color="cyan", size=6), name="start"))
+    # best = df.loc[df["metric"].idxmin()]
+    # fig.add_trace(go.Scatter3d(x=[best["light_height"]], y=[best["light_width"]], z=[best["metric"] + offset], mode="markers",
+    #                            marker=dict(color="red", size=6), name="best"))
+    #
     best = df_full.loc[df_full["metric"].idxmin()]
     fig.add_trace(go.Scatter3d(x=[best["light_height"]], y=[best["light_width"]], z=[best["metric"]+0.006],
                                mode="markers",
-                               marker=dict(color="green"), name="global min"))
+                               marker=dict(color="white"), name="<b>global min</b>"))
 
     fig.update_layout(autosize=False, width=1000, height=1000, font=dict(family="Arial", size=14, color="black"),
-                      plot_bgcolor="white", showlegend=True, legend=dict(x=.1, y=.95),
+                      plot_bgcolor="white", showlegend=False, legend=dict(x=.1, y=.95),
                       scene=dict(xaxis_title="<b>light height (cm)</b>", yaxis_title="<b>light width (cm)</b>",
                                  zaxis_title="<b>std/mean</b>"))
 
