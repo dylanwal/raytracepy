@@ -44,13 +44,13 @@ def main():
         variables=[
             fo.ContinuousVariable(name="light_height", min_=1, max_=15),
             fo.ContinuousVariable(name="light_width", min_=5, max_=15),
-            # fo.ContinuousVariable(name="mirror_offset", min_=0.1, max_=10),
+            fo.ContinuousVariable(name="mirror_offset", min_=0.1, max_=10),
             # fo.DiscreteVariable(name='grid_type', items=['circle', 'ogrid', 'grid', 'spiral'])
         ],
         kwargs=dict(
             num_rays=100_000,
             number_lights=16,
-            mirrors=False,
+            mirrors=True,
             grid_type='ogrid',
             param_names=["light_height", "light_width"]
         ),
@@ -58,22 +58,22 @@ def main():
         pass_kwargs=False
     )
 
-    method = fo.methods.MethodLatinHypercube(
+    method = fo.methods.MethodNelderMead(
         problem=problem,
-        # x0=[8, 10],
-        stop_criterion=fo.stop_criteria.StopFunctionEvaluation(25),
+        x0=[3, 12, 4],
+        stop_criterion=fo.stop_criteria.StopFunctionEvaluation(200),
     )
 
     # run single
-    # method.run()
-    # method.recorder.df.to_csv("dragon_no_mirror_long_init.csv")
-    # vis = fo.VizOptimization(method.recorder)
-    # fig = vis.plot_4d_vis()
-    # fig.write_html("temp.html", auto_open=True)
+    method.run()
+    method.recorder.df.to_csv("nelder_mead_mirrors.csv")
+    vis = fo.VizOptimization(method.recorder)
+    fig = vis.plot_4d_vis()
+    fig.write_html("temp.html", auto_open=True)
 
     # run multiple
-    batch = Batch(method, num_repeat=10)
-    batch.run(multiprocess=True)
+    # batch = Batch(method, num_repeat=10)
+    # batch.run(multiprocess=True)
 
 
 if __name__ == '__main__':

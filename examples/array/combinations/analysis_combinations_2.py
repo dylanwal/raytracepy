@@ -131,19 +131,19 @@ def plot_height(df: pd.DataFrame) -> go.Figure:
     # plot data
     colors = plot_format.get_plot_color(3)
     fig = make_subplots(specs=[[{"secondary_y": True}]])
-    fig.add_trace(go.Scatter(x=df["height"], y=df["mean"], mode="lines+markers", name="<b>mean</b>",
+    fig.add_trace(go.Scatter(x=df["height"] * 10, y=df["mean"], mode="lines+markers", name="<b>mean</b>",
                              marker=dict(color=colors[0], size=10), line=dict(color=colors[0])))
-    fig.add_trace(go.Scatter(x=df["height"], y=df["std"], mode="lines+markers", name="<b>std</b>",
+    fig.add_trace(go.Scatter(x=df["height"] * 10, y=df["std"], mode="lines+markers", name="<b>std</b>",
                              marker=dict(color=colors[1], size=10), line=dict(color=colors[1]), yaxis="y2"))
-    fig.add_trace(go.Scatter(x=df["height"], y=df["std"]/df["mean"], mode="lines+markers", name="<b>std/mean</b>",
+    fig.add_trace(go.Scatter(x=df["height"] * 10, y=df["std"]/df["mean"], mode="lines+markers", name="<b>std/mean</b>",
                              marker=dict(color=colors[2], size=10), line=dict(color=colors[2]), yaxis="y3"))
 
     # add plot formatting
     fig.update_layout(autosize=False, width=800, height=600, font=dict(family="Arial", size=18, color="black"),
                       plot_bgcolor="white", showlegend=True, legend=dict(x=.3, y=.95))
-    fig.update_xaxes(title="<b>height of lights (cm)</b>", tickprefix="<b>", ticksuffix="</b>", showline=True,
+    fig.update_xaxes(title="<b>height of lights (mm)</b>", tickprefix="<b>", ticksuffix="</b>", showline=True,
                      linewidth=5, mirror=True, linecolor='black', ticks="outside", tickwidth=4, showgrid=False,
-                     gridwidth=1, gridcolor="lightgray", domain=[0.03, 0.88], range=[0, 16])
+                     gridwidth=1, gridcolor="lightgray", domain=[0.03, 0.88], range=[0, 160])
     fig.update_yaxes(title="<b>mean irradiance</b>", tickprefix="<b>", ticksuffix="</b>", showline=True,
                      linewidth=5, mirror=True, linecolor='black', ticks="outside", tickwidth=4, showgrid=False,
                      gridwidth=1, gridcolor="lightgray")
@@ -164,18 +164,18 @@ def plot_width(df: pd.DataFrame) -> go.Figure:
     # plot data
     colors = plot_format.get_plot_color(3)
     fig = make_subplots(specs=[[{"secondary_y": True}]])
-    fig.add_trace(go.Scatter(x=df["width"], y=df["mean"], mode="lines+markers", name="<b>mean</b>",
+    fig.add_trace(go.Scatter(x=df["width"] * 10, y=df["mean"], mode="lines+markers", name="<b>mean</b>",
                              marker=dict(color=colors[0], size=10), line=dict(color=colors[0])),
                   secondary_y=False)
-    fig.add_trace(go.Scatter(x=df["width"], y=df["std"], mode="lines+markers", name="<b>std</b>",
+    fig.add_trace(go.Scatter(x=df["width"] * 10, y=df["std"], mode="lines+markers", name="<b>std</b>",
                              marker=dict(color=colors[1], size=10), line=dict(color=colors[1]), yaxis="y2"))
-    fig.add_trace(go.Scatter(x=df["width"], y=df["std"]/df["mean"], mode="lines+markers", name="<b>std/mean</b>",
+    fig.add_trace(go.Scatter(x=df["width"] * 10, y=df["std"]/df["mean"], mode="lines+markers", name="<b>std/mean</b>",
                          marker=dict(color=colors[2], size=10), line=dict(color=colors[2]), yaxis="y3"))
 
     # add plot formatting
     fig.update_layout(autosize=False, width=800, height=600, font=dict(family="Arial", size=18, color="black"),
                       plot_bgcolor="white", showlegend=True, legend=dict(x=.5, y=.95))
-    fig.update_xaxes(title="<b>width of light pattern (cm)</b>", tickprefix="<b>", ticksuffix="</b>", showline=True,
+    fig.update_xaxes(title="<b>width of light pattern (mm)</b>", tickprefix="<b>", ticksuffix="</b>", showline=True,
                      linewidth=5, mirror=True, linecolor='black', ticks="outside", tickwidth=4, showgrid=False,
                      gridwidth=1, gridcolor="lightgray", domain=[0.03, 0.88])
     fig.update_yaxes(title="<b>mean irradiance</b>", tickprefix="<b>", ticksuffix="</b>", showline=True,
