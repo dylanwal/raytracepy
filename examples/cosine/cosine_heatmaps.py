@@ -5,9 +5,13 @@ Heatmaps for Inverse Square Law
 
 import glob
 
-
+import numpy as np
+import pandas as pd
+import plotly.graph_objs as go
+import datashader as ds
 import raytracepy as rpy
-from examples.plotting_tools import heatmap_array
+
+import examples.fig_to_grid
 
 
 def main():
@@ -27,7 +31,35 @@ def main():
 
     data = [sim.planes[0].hits[:, :2] for sim in sims]
 
-    heatmap_array(data, plot_titles, x_range, y_range, res, title, file_name)
+    # heatmap_array(data, plot_titles, x_range, y_range, res, title, file_name)
+
+    x = np.linspace(x_range[0], x_range[1], res)
+    y = np.linspace(y_range[0], y_range[1], res)
+    # create heatmap
+    figs = []
+    for datum in data:
+        df = pd.DataFrame(datum, columns=["x", "y"])
+        canvas = ds.Canvas(plot_width=res, plot_height=res)
+        agg = canvas.points(df, 'x', 'y')
+        fig = go.Figure()
+        fig.add_trace(go.Heatmap(x=x, y=y, z=agg, name="count",
+                                 colorbar=dict(title="<b>count</b>", tickfont=dict())))
+
+        # formatting
+        fig.update_layout(autosize=False, width=600, height=580, font=dict(family="Arial", size=18, color="black"),
+                          plot_bgcolor="white")
+        fig.update_xaxes(title="<b>x (cm)</b>", tickprefix="<b>", ticksuffix="</b>", showline=True,
+                         linewidth=5, mirror=True, linecolor='black', ticks="outside", tickwidth=4, showgrid=False,
+                         gridwidth=1, gridcolor="lightgray", range=[-10, 10])
+        fig.update_yaxes(title="<b>y (cm)</b>", tickprefix="<b>", ticksuffix="</b>", showline=True,
+                         linewidth=5, mirror=True, linecolor='black', ticks="outside", tickwidth=4, showgrid=False,
+                         gridwidth=1, gridcolor="lightgray", scaleanchor="x")
+
+        figs.append(fig)
+        # fig.show()
+
+    examples.fig_to_grid.figs_to_grid_png(figs, shape=(3, 4))
+
     print("done")
 
 

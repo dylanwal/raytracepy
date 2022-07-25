@@ -31,7 +31,7 @@ def single_run(x: float, z: float):
     sim = rpy.RayTrace(
         planes=ground,
         lights=light,
-        total_num_rays=3_000_000,
+        total_num_rays=5_000_000,
     )
     sim.run()
 

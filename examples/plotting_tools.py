@@ -98,11 +98,12 @@ def heatmap_array(data: list[np.ndarray], plot_titles: list[str],
                       row=row_index, col=cols_index)
 
         # set axis values
-        fig.update_xaxes(title="<b>x (cm)</b>", row=row_index, col=cols_index)
-        fig.update_yaxes(title="<b>y (cm)</b>", row=row_index, col=cols_index)
+        fig.update_xaxes(title="<b>x (cm)</b>", row=row_index, col=cols_index, range=[-10, 10])
+        fig.update_yaxes(title="<b>y (cm)</b>", row=row_index, col=cols_index, scaleanchor=f"x{i+1}")
 
     # final formatting and save
-    fig.update_layout(height=400 * rows, width=600 * cols, title_text=title)
+    fig.update_layout(height=400 * rows, width=600 * cols, title_text=title, plot_bgcolor="white",
+                      font=dict(family="Arial", color="black"))
     if not file_name.endswith(".html"):
         file_name += ".html"
 

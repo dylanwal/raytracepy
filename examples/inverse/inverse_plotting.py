@@ -75,7 +75,7 @@ def main():
 
     colors = plot_format.get_plot_color(2)
     fig = go.Figure()
-    fig.add_trace(go.Scatter(x=ln_sim[:, 0], y=ln_sim[:, 1], mode="markers", marker=dict(color=colors[0], size=10),
+    fig.add_trace(go.Scatter(x=ln_sim[:, 0], y=ln_sim[:, 1], mode="markers", marker=dict(color=colors[0], size=20),
                              name=f"<b>simulation</b>"))
     lin_reg(fig, ln_sim[:, 0], ln_sim[:, 1], color=colors[0])
     fig.add_trace(go.Scatter(x=ln_expt[:, 0], y=ln_expt[:, 1], mode="markers", marker=dict(color=colors[1], size=10),
