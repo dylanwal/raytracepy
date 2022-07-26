@@ -43,11 +43,11 @@ def main():
     fig = plot_pareto_fronts(df_diffuser, fig, color=colors.pop(), name="diffuser")
     fig = plot_pareto_fronts(df_mirror, fig, color=colors.pop(), name="mirror")
 
-    fig.update_layout(autosize=False, width=800, height=600, font=dict(family="Arial", size=18, color="black"),
-                      plot_bgcolor="white", legend={"x": 0.05, "y": 0.98})
+    fig.update_layout(autosize=False, width=int(800*.7), height=int(600*.7), font=dict(family="Arial", size=18, color="black"),
+                      plot_bgcolor="white", legend={"x": 0.68, "y": 0.02, "bgcolor":"rgba(0,0,0,0)"})
     fig.update_xaxes(title="<b>mean irradiance</b>", tickprefix="<b>", ticksuffix="</b>", showline=True, linewidth=5,
                      mirror=True, linecolor='black', ticks="outside", tickwidth=4, showgrid=False, gridwidth=1,
-                     gridcolor="lightgray")
+                     gridcolor="lightgray", range=[0, 650])
     fig.update_yaxes(title="<b>std irradiance</b>", tickprefix="<b>", ticksuffix="</b>", showline=True, linewidth=5,
                      mirror=True, linecolor='black', ticks="outside", tickwidth=4, showgrid=False, gridwidth=1,
                      gridcolor="lightgray", range=[0, 50])
@@ -164,4 +164,4 @@ def main4():
 
 
 if __name__ == "__main__":
-    main3()
+    main()

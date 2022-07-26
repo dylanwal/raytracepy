@@ -39,11 +39,11 @@ def plot_grid_pareto_fronts(df: pd.DataFrame) -> go.Figure:
         _convex_hull(fig, df, grid)
 
     # add plot formatting
-    fig.update_layout(autosize=False, width=780, height=600, font=dict(family="Arial", size=18, color="black"),
+    fig.update_layout(autosize=False, width=int(780*0.7), height=int(600*.7), font=dict(family="Arial", size=18, color="black"),
                       plot_bgcolor="white", showlegend=True, legend=dict(x=.05, y=.95))
     fig.update_xaxes(title="<b>mean irradiance</b>", tickprefix="<b>", ticksuffix="</b>", showline=True,
                      linewidth=5, mirror=True, linecolor='black', ticks="outside", tickwidth=4, showgrid=False,
-                     gridwidth=1, gridcolor="lightgray")
+                     gridwidth=1, gridcolor="lightgray", range=[0, 650])
     fig.update_yaxes(title="<b>std irradiance</b>", tickprefix="<b>", ticksuffix="</b>", showline=True,
                      linewidth=5, mirror=True, linecolor='black', ticks="outside", tickwidth=4, showgrid=False,
                      gridwidth=1, gridcolor="lightgray")
@@ -79,7 +79,7 @@ def plot_grid_pareto_fronts_norm(df: pd.DataFrame) -> go.Figure:
         _convex_hull_norm(fig, df, grid)
 
     # add plot formatting
-    fig.update_layout(autosize=False, width=800, height=600, font=dict(family="Arial", size=18, color="black"),
+    fig.update_layout(autosize=False, width=int(800*0.7), height=int(600*.7), font=dict(family="Arial", size=18, color="black"),
                       plot_bgcolor="white", showlegend=True, legend=dict(x=.05, y=.95))
     fig.update_xaxes(title="<b>normalized mean irradiance</b>", tickprefix="<b>", ticksuffix="</b>", showline=True,
                      linewidth=5, mirror=True, linecolor='black', ticks="outside", tickwidth=4, showgrid=False,
@@ -106,11 +106,11 @@ def plot_num_lights(df: pd.DataFrame) -> go.Figure:
                              marker=dict(color=colors[2], size=10), line=dict(color=colors[2]), yaxis="y3"))
 
     # add plot formatting
-    fig.update_layout(autosize=False, width=800, height=600, font=dict(family="Arial", size=18, color="black"),
-                      plot_bgcolor="white", showlegend=True, legend=dict(x=.4, y=.95))
+    fig.update_layout(autosize=False, width=int(800*0.7), height=int(600*.7), font=dict(family="Arial", size=18, color="black"),
+                      plot_bgcolor="white", showlegend=True, legend=dict(x=.23, y=1.02, bgcolor="rgba(0,0,0,0)"))
     fig.update_xaxes(title="<b>number of lights</b>", tickprefix="<b>", ticksuffix="</b>", showline=True,
                      linewidth=5, mirror=True, linecolor='black', ticks="outside", tickwidth=4, showgrid=False,
-                     gridwidth=1, gridcolor="lightgray", domain=[0.03, 0.88])
+                     gridwidth=1, gridcolor="lightgray", domain=[0.0, 0.8])
     fig.update_yaxes(title="<b>mean irradiance</b>", tickprefix="<b>", ticksuffix="</b>", showline=True,
                      linewidth=5, mirror=True, linecolor='black', ticks="outside", tickwidth=4, showgrid=False,
                      gridwidth=1, gridcolor="lightgray")
@@ -139,11 +139,11 @@ def plot_height(df: pd.DataFrame) -> go.Figure:
                              marker=dict(color=colors[2], size=10), line=dict(color=colors[2]), yaxis="y3"))
 
     # add plot formatting
-    fig.update_layout(autosize=False, width=800, height=600, font=dict(family="Arial", size=18, color="black"),
-                      plot_bgcolor="white", showlegend=True, legend=dict(x=.3, y=.95))
+    fig.update_layout(autosize=False, width=int(800*0.7), height=int(600*.7), font=dict(family="Arial", size=18, color="black"),
+                      plot_bgcolor="white", showlegend=True, legend=dict(x=.2, y=1, bgcolor="rgba(0,0,0,0)"))
     fig.update_xaxes(title="<b>height of lights (mm)</b>", tickprefix="<b>", ticksuffix="</b>", showline=True,
                      linewidth=5, mirror=True, linecolor='black', ticks="outside", tickwidth=4, showgrid=False,
-                     gridwidth=1, gridcolor="lightgray", domain=[0.03, 0.88], range=[0, 160])
+                     gridwidth=1, gridcolor="lightgray", domain=[0.0, 0.8], range=[0, 160])
     fig.update_yaxes(title="<b>mean irradiance</b>", tickprefix="<b>", ticksuffix="</b>", showline=True,
                      linewidth=5, mirror=True, linecolor='black', ticks="outside", tickwidth=4, showgrid=False,
                      gridwidth=1, gridcolor="lightgray")
@@ -173,11 +173,11 @@ def plot_width(df: pd.DataFrame) -> go.Figure:
                          marker=dict(color=colors[2], size=10), line=dict(color=colors[2]), yaxis="y3"))
 
     # add plot formatting
-    fig.update_layout(autosize=False, width=800, height=600, font=dict(family="Arial", size=18, color="black"),
-                      plot_bgcolor="white", showlegend=True, legend=dict(x=.5, y=.95))
+    fig.update_layout(autosize=False, width=int(800*0.7), height=int(600*.7), font=dict(family="Arial", size=18, color="black"),
+                      plot_bgcolor="white", showlegend=True, legend=dict(x=.4, y=1))
     fig.update_xaxes(title="<b>width of light pattern (mm)</b>", tickprefix="<b>", ticksuffix="</b>", showline=True,
                      linewidth=5, mirror=True, linecolor='black', ticks="outside", tickwidth=4, showgrid=False,
-                     gridwidth=1, gridcolor="lightgray", domain=[0.03, 0.88])
+                     gridwidth=1, gridcolor="lightgray", domain=[0.0, 0.8])
     fig.update_yaxes(title="<b>mean irradiance</b>", tickprefix="<b>", ticksuffix="</b>", showline=True,
                      linewidth=5, mirror=True, linecolor='black', ticks="outside", tickwidth=4, showgrid=False,
                      gridwidth=1, gridcolor="lightgray")

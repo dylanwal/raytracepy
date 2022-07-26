@@ -99,6 +99,9 @@ def probability_func_selector(fun_id, x: float = 0):
     elif fun_id == 6:
         """ probability of reflection on white pcb. """
         return 0.02
+    elif fun_id == 7:
+        """ probability of reflection on mirror. """
+        return 1
     else:
         """ Error/invalid id; can't throw real error in numba codeblock so cause crazy bad data to signify error"""
         return -1000000

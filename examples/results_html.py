@@ -6,6 +6,7 @@ from typing import Callable, List, Dict, Optional, Union
 from pathlib import Path
 import os
 
+
 def get_table_style(table_name: str = "styled_table", table_color: str = "#000000",
                     header_color: str = "#ffffff") -> str:
 

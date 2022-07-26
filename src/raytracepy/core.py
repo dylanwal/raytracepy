@@ -15,7 +15,7 @@ from . import dtype, njit
 from .light_plane_funcs import theta_func_selector, probability_func_selector
 
 
-@njit(cache=True)   # ("f8[::](f8,f8[:],f8[:],i4)")
+@njit   # ("f8[::](f8,f8[:],f8[:],i4)")
 def create_rays(theta_func_id, direction,
                 phi: np.ndarray = np.array([0, 2 * np.pi], dtype=dtype),
                 num_rays: int = 1) -> np.ndarray:
@@ -45,7 +45,7 @@ def create_rays(theta_func_id, direction,
     return rays_dir
 
 
-@njit(cache=True)
+@njit
 def trace_rays(ray_pos: np.ndarray, ray_dir: np.ndarray, plane_matrix: np.ndarray,
                bounce_max: int, traces: np.ndarray):
     """
@@ -116,12 +116,12 @@ def trace_rays(ray_pos: np.ndarray, ray_dir: np.ndarray, plane_matrix: np.ndarra
     return ray_dir, traces
 
 
-@njit(cache=True)
+@njit
 def refection_vector(vector, plane_normal):
     return -2 * np.dot(vector, plane_normal) * plane_normal + vector
 
 
-@njit(cache=True)
+@njit
 def check_in_plane_range(point, plane_corners):
     """
     Checks if point is within the bounds of plane
@@ -145,7 +145,7 @@ def check_in_plane_range(point, plane_corners):
     return True
 
 
-@njit(cache=True)
+@njit
 def rotate_vec(rays, direction):
     prim_dir = np.array([0.0000000000000016, 0.000000000000296, 0.99999999999988], dtype='float64')
     axis_of_rotate = np.cross(prim_dir, direction)
@@ -157,7 +157,7 @@ def rotate_vec(rays, direction):
     return rays
 
 
-@njit(cache=True)
+@njit
 def into_quaternion_from_axis_angle(axis, angle):
     """Initialise from axis and angle representation
 
@@ -181,7 +181,7 @@ def into_quaternion_from_axis_angle(axis, angle):
     return [r, i[0], i[1], i[2]]
 
 
-@njit(cache=True)
+@njit
 def rotate_quaternion(q, vector):
     """Rotate a quaternion vector using the stored rotation.
 
@@ -196,13 +196,13 @@ def rotate_quaternion(q, vector):
     return np.dot(q_matrix(np.dot(q_matrix(q), q_vector)), q_conjugate(q))
 
 
-@njit(cache=True)
+@njit
 def q_conjugate(q):
     w, x, y, z = q
     return np.array([w, -x, -y, -z], dtype=dtype)
 
 
-@njit(cache=True)
+@njit
 def q_matrix(q):
     return np.array([
         [q[0], -q[1], -q[2], -q[3]],
@@ -211,7 +211,7 @@ def q_matrix(q):
         [q[3], -q[2], q[1], q[0]]], dtype=dtype)
 
 
-@njit(cache=True)
+@njit
 def plane_ray_intersection(rays_dir: np.ndarray, rays_pos: np.ndarray, plane_dir: np.ndarray,
                            plane_pos: np.ndarray):
     """
@@ -238,14 +238,14 @@ def plane_ray_intersection(rays_dir: np.ndarray, rays_pos: np.ndarray, plane_dir
     return intersection
 
 
-@njit(cache=True)   # ("f8[:](f8[:],i4)")
+@njit   # ("f8[:](f8[:],i4)")
 def get_phi(phi_rad: np.ndarray = np.array([0, 2 * np.pi], dtype=dtype),
             num_rays: int = 1) -> np.ndarray:
     """generate rays angles in spherical coordinates"""
     return (phi_rad[1] - phi_rad[0]) * np.random.random(num_rays) + phi_rad[0]
 
 
-@njit(cache=True)
+@njit
 def spherical_to_cartesian(theta, phi, r=1):
     """
     Converts spherical coordinates (theta, phi, r) into cartesian coordinates [x, y, z]
@@ -268,7 +268,7 @@ def spherical_to_cartesian(theta, phi, r=1):
     return mat
 
 
-@njit(cache=True)  # ("f8[:](f8[:])")
+@njit  # ("f8[:](f8[:])")
 def normalise(vector: np.ndarray) -> np.ndarray:
     """
     Object is guaranteed to be a unit quaternion after calling this

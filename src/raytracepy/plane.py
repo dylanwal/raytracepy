@@ -6,6 +6,7 @@ import inspect
 
 import numpy as np
 import plotly.graph_objs as go
+import pandas as pd
 
 from . import get_object_uid, default_plot_layout, dtype, merge_html_figs
 from .utils.sig_figs import sig_figs
@@ -307,6 +308,10 @@ class Plane:
                     sig_figs(np.max(his_array))]
 
         return [headers, data]
+
+    def hit_stats_series(self) -> pd.Series:
+        headers, data = self._hit_stats()
+        return pd.Series(data, headers)
 
     # Plotting #########################################################################################################
     def plot_heat_map(self, save_open: bool = True, colorbar_range: tuple = None):
