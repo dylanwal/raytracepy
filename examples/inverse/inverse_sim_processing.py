@@ -26,7 +26,7 @@ for sim in sims:
         count += 1
     rdf[:, count] = y
     count += 1
-np.savetxt("rdf_inverse.csv", rdf, delimiter=",")  # save result as csv
+np.savetxt("rdf_inverse2.csv", rdf, delimiter=",")  # save result as csv
 
 # calculate hits within circle
 for sim in sims:

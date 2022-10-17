@@ -91,7 +91,7 @@ def main():
 
     ###################################################################################################################
     # rdf plots
-    with open("rdf_inverse.csv", "r") as file:
+    with open("rdf_inverse2.csv", "r") as file:
         rdf = np.loadtxt(file, delimiter=",")
     colors = plot_format.get_plot_color(rdf.shape[1] - 1)
     x_theory = np.linspace(0, rdf[-1, 0], 50)
