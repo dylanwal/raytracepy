@@ -1,0 +1,25 @@
+{
+  "captured_at_utc": "2026-09-20T02:10:44.380386+00:00",
+  "git_commit": "f09f19d898f0de8f3532df6ed03a66b142b1da32",
+  "machine": "AMD64",
+  "packages": {
+    "datashader": "0.13.0",
+    "llvmlite": "0.39.1",
+    "numba": "0.56.4",
+    "numpy": "1.22.0",
+    "pandas": "1.4.1",
+    "plotly": "5.6.0",
+    "pytest": "9.1.1",
+    "pytest-cov": "7.1.0",
+    "raytracepy": "0.0.1",
+    "scipy": "1.10.0"
+  },
+  "platform": "Windows-10-10.0.26200-SP0",
+  "processor": "Intel64 Family 6 Model 183 Stepping 1, GenuineIntel",
+  "python_executable": "D:\\Projects\\RayTracePy\\.venv\\Scripts\\python.exe",
+  "python_implementation": "CPython",
+  "python_version": "3.10.21",
+  "raytracepy_import_path": "D:\\Projects\\RayTracePy\\src\\raytracepy\\__init__.py",
+  "release": "10",
+  "system": "Windows"
+}

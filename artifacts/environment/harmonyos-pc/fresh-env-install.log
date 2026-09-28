@@ -1,0 +1,70 @@
++ cd /storage/Users/currentUser/harmony/raytracepy
++ export PIP_INDEX_URL=https://pypi.org/simple
++ PIP_INDEX_URL=https://pypi.org/simple
++ export PIP_CACHE_DIR=/storage/Users/currentUser/harmony/raytracepy/.venv-pipcache
++ PIP_CACHE_DIR=/storage/Users/currentUser/harmony/raytracepy/.venv-pipcache
++ W=/storage/Users/currentUser/.local/ohos-python-tools/wheels
++ T=/storage/Users/currentUser/.local/ohos-python-tools
++ SP=.venv-fresh/lib/python3.10/site-packages
++ rm -rf .venv-fresh
++ .venv/bin/python -m venv .venv-fresh
++ P=.venv-fresh/bin/python
++ .venv-fresh/bin/python -m pip install -q --upgrade pip
++ echo '== 1) numpy =='
+== 1) numpy ==
++ .venv-fresh/bin/python -m pip install -q numpy==1.26.4
++ echo rc1=0
+rc1=0
++ echo '== 2) 本地 llvmlite/numba wheel =='
+== 2) 本地 llvmlite/numba wheel ==
++ .venv-fresh/bin/python -m pip install -q /storage/Users/currentUser/.local/ohos-python-tools/wheels/llvmlite-0.44.0-cp310-cp310-linux_aarch64.whl /storage/Users/currentUser/.local/ohos-python-tools/wheels/numba-0.61.2-cp310-cp310-linux_aarch64.whl
++ echo rc2=0
+rc2=0
++ echo '== 3) 固定依赖清单 =='
+== 3) 固定依赖清单 ==
++ .venv-fresh/bin/python -m pip install -q -r .worktrees/delivery/requirements-harmonyos.txt
++ echo rc3=0
+rc3=0
++ echo '== 4) fixall（ELF 修复 + 签名） =='
+== 4) fixall（ELF 修复 + 签名） ==
++ .venv/bin/python /storage/Users/currentUser/.local/ohos-python-tools/fixall.py .venv-fresh/lib/python3.10/site-packages
++ echo rc4=0
+rc4=0
++ echo '== 5) add_stlshim =='
+== 5) add_stlshim ==
++ .venv/bin/python /storage/Users/currentUser/.local/ohos-python-tools/add_stlshim.py .venv-fresh/lib/python3.10/site-packages
++ echo rc5=0
+rc5=0
++ echo '== 6) raytracepy wheel =='
+== 6) raytracepy wheel ==
++ .venv-fresh/bin/python -m pip install -q .worktrees/delivery/dist/raytracepy-0.0.1-py3-none-any.whl
++ echo rc6=0
+rc6=0
++ echo '== 7) 导入验证 =='
+== 7) 导入验证 ==
++ .venv-fresh/bin/python -c 'import raytracepy, numpy, numba, llvmlite, scipy, pandas, plotly, datashader; print('\''import OK:'\'', raytracepy.__file__); print('\''versions:'\'', numpy.__version__, numba.__version__, llvmlite.__version__, scipy.__version__, pandas.__version__)'
+/storage/Users/currentUser/harmony/raytracepy/.venv-fresh/lib/python3.10/site-packages/datashader/__init__.py:6: FutureWarning: param.version.Version has been deprecated and will be removed in a future version.
+  __version__ = str(param.version.Version(fpath=__file__, archive_commit="$Format:%h$",
+/storage/Users/currentUser/harmony/raytracepy/.venv-fresh/lib/python3.10/site-packages/param/version.py:200: FutureWarning: param.version.run_cmd has been deprecated and will be removed in a future version.
+  remotes = run_cmd([cmd, 'remote', '-v'],
+import OK: /storage/Users/currentUser/harmony/raytracepy/.venv-fresh/lib/python3.10/site-packages/raytracepy/__init__.py
+versions: 1.26.4 0.61.2 0.44.0 1.15.3 2.2.3
++ echo rc7=0
+rc7=0
++ echo '== 8) 冒烟仿真 =='
+== 8) 冒烟仿真 ==
++ NUMBA_DISABLE_JIT=1
++ .venv-fresh/bin/python -c $'\nimport raytracepy as rpy, numpy as np\ng = rpy.Plane(name=\'ground\', position=np.array([0,0,0.],dtype=\'float64\'), normal=np.array([0,0,1.],dtype=\'float64\'), length=20, width=20, bins=(20,20))\nl = rpy.Light(position=np.array([0,0,5.],dtype=\'float64\'), direction=np.array([0,0,-1.],dtype=\'float64\'), num_traces=100, theta_func=1)\ns = rpy.RayTrace(planes=g, lights=l, total_num_rays=10000)\ns.run(); print(\'smoke sim OK, hits =\', g.hits.shape[0])\n'
+smoke sim OK, hits = 6432
++ echo rc8=0
+rc8=0
++ echo '== 9) 单测 =='
+== 9) 单测 ==
++ cd .worktrees/delivery
++ NUMBA_DISABLE_JIT=1
++ /storage/Users/currentUser/harmony/raytracepy/.venv-fresh/bin/python -m pytest -q tests/ -p no:cacheprovider --no-cov
++ tail -2
+.......                                                                  [100%]
+7 passed in 0.78s
++ echo rc9=0
+rc9=0

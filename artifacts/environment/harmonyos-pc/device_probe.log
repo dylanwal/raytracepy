@@ -1,0 +1,342 @@
+# 鸿蒙 PC 原生 Python 环境探测原始记录
+# 采集人：3号
+# 采集日期：2026-09-25
+# 采集方式：设备自带终端（第三方应用 Alacritty）手动逐条执行
+# 说明：命令与输出文本均为终端原始内容，未作改写；仅作排版整理——多列输出
+#       （如 ls 列表）改为每行一项，并加小节编号与分隔线便于引用。
+
+============================================================
+[01] 系统架构
+============================================================
+$ uname -m
+aarch64
+
+============================================================
+[02] PATH 中各目录存在性
+============================================================
+$ echo $PATH
+/usr/local/bin:/data/app/bin:/data/service/hnp/bin:/usr/bin:/vendor/bin
+
+$ ls /usr/local/bin
+ls: /usr/local/bin: No such file or directory
+
+$ ls /vendor/bin
+ls: /vendor/bin: No such file or directory
+
+$ ls /data/app/bin
+ls: /data/app/bin: No such file or directory
+
+$ ls /data/service/hnp/bin
+ls: /data/service/hnp/bin: No such file or directory
+
+$ ls /usr/bin
+# 有输出，约 100 项，完整清单见 [11]
+
+============================================================
+[03] /usr/bin 中 Python 与 pip 核查
+============================================================
+$ ls /usr/bin | grep -i -E '^python|^pip'
+# 无输出
+
+$ command -v python
+# 无输出
+
+$ command -v python3
+# 无输出
+
+$ command -v pip
+# 无输出
+
+$ command -v pip3
+# 无输出
+
+============================================================
+[04] /usr/bin 中 C 编译器与构建工具核查
+============================================================
+$ command -v cc
+# 无输出
+
+$ command -v gcc
+# 无输出
+
+$ command -v clang
+# 无输出
+
+$ command -v cl
+# 无输出
+
+$ command -v make
+# 无输出
+
+============================================================
+[05] 包管理器核查
+============================================================
+$ for c in apt apt-get dnf yum apk pacman rpm dpkg hpm pkgcmd brew; do command -v "$c"; done
+# 无输出
+
+============================================================
+[06] 文件系统搜索
+============================================================
+$ find / -maxdepth 4 -name "*python*" 2>/dev/null
+# 无输出
+
+$ find /usr /storage -name "*python*" 2>/dev/null
+# 无输出
+
+============================================================
+[07] /usr/lib 内容
+============================================================
+$ ls /usr/lib
+libcrypto.so.3  libncursesw.so.6  libssl.so.3  libtinfo.so.6  libz.so.1  libz.so.1.2.13
+# 无 libpython.so
+
+============================================================
+[08] 基础命令可用性
+============================================================
+$ id
+zsh: command not found: id
+
+$ command -v uname
+/usr/bin/uname
+
+============================================================
+[09] 运行环境判定（关键证据）
+============================================================
+$ env
+ALACRITTY_WINDOW_ID=window85_terminal0
+HAP_DEBUGGABLE=false
+XDG_CACHE_HOME=/data/storage/el2/base/haps/entry/files
+XDG_CONFIG_HOME=/data/storage/el2/base/haps/entry/files
+__LIBACE_ENTRY_POINT=59f6cc9a34
+USER=100
+HNP_PRIVATE_HOME=/data/app
+HNP_PUBLIC_HOME=/data/service/hnp
+# 其余环境变量与本判定无关，未记录
+
+$ echo $SHELL
+/bin/sh
+
+$ pwd
+/storage/Users/currentUser/Desktop
+
+============================================================
+[10] 权限受限情况
+============================================================
+$ ls /
+ls: /: Permission denied
+
+$ ls /bin
+ls: /bin: Permission denied
+
+$ ls /system
+ls: /system: Permission denied
+
+$ ls /data
+ls: /data: Permission denied
+
+$ ls -la /storage/Users/currentUser/appdata
+ls: /storage/Users/currentUser/appdata: Operation not permitted
+
+============================================================
+[11] HNP 机制
+============================================================
+$ command -v hnp
+# 无输出
+
+$ ls /data/service/hnp
+ls: /data/service/hnp: No such file or directory
+
+============================================================
+[12] /usr/bin 完整清单
+============================================================
+# 输出已整理为逐行形式，内容与原终端输出一致
+awk
+base64
+basename
+bunzip2
+bzcmp
+bzdiff
+bzegrep
+bzfgrep
+bzgrep
+bzip2
+bzip2recover
+bzmore
+cal
+cat
+chmod
+cksum
+clear
+cmp
+comm
+count
+cp
+cpio
+crc32
+curl
+cut
+date
+dd
+df
+diff
+dirname
+dos2unix
+du
+echo
+egrep
+env
+expand
+expr
+factor
+false
+fgrep
+file
+find
+flock
+fmt
+free
+ftpget
+ftpput
+getconf
+getfattr
+grep
+gunzip
+gzip
+head
+help
+hexedit
+hidumper
+hilog
+hiperf
+hiprofiler_cmd
+hisysevent
+hitrace
+hostname
+iconv
+ifconfig
+iotop
+ipcs
+join
+kill
+killall
+ln
+loh
+ls
+lsattr
+lsmod
+mcookie
+md5sum
+mkdir
+mkpasswd
+mktemp
+more
+mount
+mountpoint
+mv
+netcat
+netstat
+nl
+nohup
+nproc
+od
+openssl
+param
+paramshell
+paste
+patch
+pgrep
+pidof
+ping
+ping6
+pkill
+pr
+printenv
+printf
+ps
+pwd
+pwdx
+readahead
+readlink
+realpath
+reboot
+reset
+rev
+rm
+rmdir
+route
+scp
+sed
+seq
+setfattr
+sftp
+sh
+sha1sum
+sha256sum
+sha384sum
+sha512sum
+shred
+sleep
+sort
+split
+ssh
+ssh-keygen
+stat
+strings
+sudo
+sync
+sysctl
+tac
+tail
+tar
+taskset
+tee
+telnet
+test
+time
+timeout
+timestamps
+toe
+top
+touch
+tr
+traceroute
+traceroute6
+true
+truncate
+tsort
+tty
+uname
+uniq
+unix2dos
+unlink
+unzip
+uptime
+usleep
+uudecode
+uuencode
+uuidgen
+vi
+view
+vim
+vmstat
+watch
+wc
+wget
+which
+xargs
+xxd
+yes
+zcat
+zip
+zsh
+
+============================================================
+[13] check_environment.py 在目标设备上的执行尝试
+============================================================
+$ python3 scripts/check_environment.py
+zsh: command not found: python3
+
+$ python scripts/check_environment.py
+zsh: command not found: python
+
+# 该脚本未能在目标设备上执行。此项本身作为一条证据记录。

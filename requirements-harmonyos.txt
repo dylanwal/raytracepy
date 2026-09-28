@@ -1,0 +1,70 @@
+# HarmonyOS pins (task 4). Device: CPython 3.10.15 @ ~/.local/alpine-py310, 2026-09-26.
+# See docs/harmonyos-pc/DEPENDENCY_MATRIX.md. Re-pin if interpreter changes.
+#
+# 2026-09-28（1号 补）：本文件固定**全部传递依赖**，并记录安装顺序与后处理。
+#   - 不固定 dask 时 pip 会装最新版，其 dask.dataframe 需要 pyarrow，
+#     目标环境导入 datashader 会失败；故固定 dask==2023.3.0 及其传递依赖。
+#   - numba / llvmlite 在 PyPI 上没有 musllinux wheel，不能由本文件直接安装，
+#     必须先用设备专用 aarch64 wheel 安装（见下）。
+#   - 装完必须运行环境工具的 fixall.py（ELF 修复 + 签名）与 add_stlshim.py
+#     （numba 扩展链接 stl shim），否则扩展无法 dlopen。
+#   - JIT：numba JIT 在设备上执行段错误，需 NUMBA_DISABLE_JIT=1
+#     （源码守卫已由 PR #4 合并），详见 DEPENDENCY_MATRIX.md。
+#
+# 安装（顺序不可变；用 scripts/install_dependencies_harmonyos.py 自动执行）：
+#   1) numpy          2) 本地 llvmlite/numba wheel   3) 本文件其余依赖
+#   4) fixall.py      5) add_stlshim.py              6) raytracepy
+#   全程需指定官方索引：export PIP_INDEX_URL=https://pypi.org/simple
+#   （设备 pip 默认指向 OpenHarmony 镜像，其中没有 numpy）
+
+numpy==1.26.4
+scipy==1.15.3
+pandas==2.2.3
+plotly==5.6.0
+datashader==0.16.3
+dask==2023.3.0
+
+# datashader / dask 传递依赖
+colorcet==3.2.1
+param==2.4.2
+pyct==0.6.0
+xarray==2025.6.1
+cloudpickle==3.1.2
+fsspec==2026.9.0
+locket==1.0.0
+partd==1.4.2
+toolz==1.1.0
+multipledispatch==1.0.0
+pillow==12.3.0
+packaging==26.3
+
+# 其它
+certifi==2026.7.22
+charset-normalizer==3.5.1
+click==8.5.0
+idna==3.20
+importlib_metadata==9.0.1
+requests==2.34.2
+six==1.17.0
+tenacity==9.1.4
+typing_extensions==4.16.0
+urllib3==2.8.0
+zipp==4.1.0
+python-dateutil==2.9.0.post0
+pytz==2026.4
+tzdata==2026.4
+PyYAML==6.0.3
+
+# 测试
+pytest==9.1.1
+pytest-cov==7.1.0
+coverage==7.16.1
+iniconfig==2.3.0
+pluggy==1.6.0
+Pygments==2.21.0
+exceptiongroup==1.3.1
+tomli==2.4.1
+
+# 设备专用 wheel（不在 PyPI，由环境工具生成；版本需与上面一致）
+#   llvmlite-0.44.0-cp310-cp310-linux_aarch64.whl
+#   numba-0.61.2-cp310-cp310-linux_aarch64.whl

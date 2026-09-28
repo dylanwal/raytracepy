@@ -1,0 +1,56 @@
+{
+  "case": "single-light-official-reference",
+  "comparison_policy": {
+    "harmonyos_provisional_atol": 1e-08,
+    "harmonyos_provisional_rtol": 1e-06,
+    "note": "Recalibrate on HarmonyOS during week two using repeated-run evidence.",
+    "reference_environment": "exact deterministic comparison"
+  },
+  "result": {
+    "histogram_max": 1025.0,
+    "histogram_mean": 196.20997857361493,
+    "histogram_min": 14.0,
+    "histogram_percentiles": {
+      "1": 26.0,
+      "10": 46.0,
+      "5": 36.0,
+      "50": 114.0,
+      "90": 493.0,
+      "95": 676.0,
+      "99": 902.0
+    },
+    "histogram_sha256": "bacd25e64f5ca3bd0d6df9bf7fa775d25d8410cea055368bebb3a0198d0cc677",
+    "histogram_shape": [
+      99,
+      99
+    ],
+    "histogram_std": 200.14951402107044,
+    "histogram_sum": 1923054,
+    "hit_coordinate_max": [
+      9.999825829881104,
+      9.999952979470532,
+      8.881784197001252e-16
+    ],
+    "hit_coordinate_mean": [
+      0.0007782921386433898,
+      0.004137619690995617,
+      3.694866268758445e-21
+    ],
+    "hit_coordinate_min": [
+      -9.999990942736803,
+      -9.99999811080813,
+      -8.881784197001252e-16
+    ],
+    "hit_coordinate_std": [
+      4.073943230668654,
+      4.074552095925623,
+      1.2879190611469105e-16
+    ],
+    "hit_count": 1923054,
+    "hit_rate": 0.641018,
+    "miss_count": 1076946,
+    "total_rays": 3000000
+  },
+  "schema_version": 1,
+  "seed": 20260920
+}

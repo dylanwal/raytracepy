@@ -1,0 +1,20 @@
+RayTracePy 0.0.1 PyPI wheel import check
+Reference OS: Windows AMD64
+Python: CPython 3.10.21
+Install command: uv pip install --python .venv-reference\Scripts\python.exe "raytracepy==0.0.1"
+Install result: success
+Import command: .venv-reference\Scripts\python.exe -c "import raytracepy"
+Import result: failed
+
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+  File ".venv-reference\lib\site-packages\raytracepy\__init__.py", line 115, in <module>
+    from .light import Light
+  File ".venv-reference\lib\site-packages\raytracepy\light.py", line 9, in <module>
+    from .utils.analysis_func import sphere_distribution
+ModuleNotFoundError: No module named 'raytracepy.utils'
+
+Wheel contents include raytracepy/*.py but omit raytracepy/utils and other
+subpackages. The GitHub source checkout at the recorded baseline commit is used
+for numeric reference generation; this failure must remain visible to packaging
+and integration owners.

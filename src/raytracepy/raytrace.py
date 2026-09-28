@@ -253,7 +253,7 @@ class RayTrace:
     def _get_trace_plot_data(light: Light) -> np.ndarray:
         """"""
         _out = np.empty((light.traces.shape[0]*(light.traces.shape[1]-1), 3))
-        _out[:] = np.NaN
+        _out[:] = np.nan
 
         _fill_level = 0
         for trace in light.traces:

@@ -1,0 +1,11 @@
+RayTracePy reference baseline
+input=/storage/Users/currentUser/harmony/raytracepy/.worktrees/delivery/tests/fixtures/single_light_reference_input.json
+git_commit=16761dea896618f4a9faf3c8171127eb79968b1d
+python=3.10.15
+seed=20260920
+total_rays=3000000
+hit_count=1923054
+hit_rate=0.641018000000
+histogram_sha256=bacd25e64f5ca3bd0d6df9bf7fa775d25d8410cea055368bebb3a0198d0cc677
+duration_seconds=67.531697
+repeat_identical=True

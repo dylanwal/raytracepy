@@ -1,0 +1,25 @@
+{
+  "case": "single-light-official-reference",
+  "description": "Deterministic reference for examples/single/single_light.py using its complete 3,000,000-ray workload.",
+  "light": {
+    "direction": [0.0, 0.0, -1.0],
+    "name": "reference-light",
+    "num_traces": 100,
+    "position": [0.0, 0.0, 5.0],
+    "theta_func": 1
+  },
+  "plane": {
+    "bins": [100, 100],
+    "length": 20.0,
+    "name": "ground",
+    "normal": [0.0, 0.0, 1.0],
+    "position": [0.0, 0.0, 0.0],
+    "width": 20.0
+  },
+  "schema_version": 1,
+  "seed": 20260920,
+  "simulation": {
+    "bounce_max": 0,
+    "total_num_rays": 3000000
+  }
+}

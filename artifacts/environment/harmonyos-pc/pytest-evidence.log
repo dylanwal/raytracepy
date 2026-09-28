@@ -1,0 +1,58 @@
+# 目标设备测试证据
+# 采集人：1号    采集日期：2026-09-26
+# 环境：项目 .venv，CPython 3.10.15，numpy 1.26.4 / numba 0.61.2 / llvmlite 0.44.0
+# 说明：以下为命令与关键输出摘录。段错误一节只摘取头部（完整输出为上百行回溯），
+#       其余为完整输出。
+
+============================================================
+[1] 默认（JIT 开启）
+============================================================
+$ pytest -q tests/
+..Fatal Python error: Segmentation fault
+
+Current thread 0x0000005b091d9650 (most recent call first):
+  File "/storage/Users/currentUser/harmony/raytracepy/src/raytracepy/raytrace.py", line 175 in run
+  File "/storage/Users/currentUser/harmony/raytracepy/scripts/generate_reference_baseline.py", line 104 in run_simulation
+  File "/storage/Users/currentUser/harmony/raytracepy/tests/conftest.py", line 18 in smoke_run
+# 退出码：139（SIGSEGV）
+# 说明：先有 2 个测试通过（导入测试），随后在 smoke_run fixture 中崩溃。
+
+============================================================
+[2] 关闭 JIT（需 fix/numba-disable-jit-override 的源码守卫）
+============================================================
+$ NUMBA_DISABLE_JIT=1 pytest -q tests/
+.......                                                                  [100%]
+7 passed in 0.72s
+# 退出码：0
+# 说明：纯 Python 路径的结果与 Windows 开启 JIT 的参考值逐位一致
+#       （test_minimal_simulation.py 的 histogram_sha256 断言通过）。
+
+============================================================
+[3] NUMBA_DISABLE_JIT 是否生效（修复前 / 修复后）
+============================================================
+$ NUMBA_DISABLE_JIT=1 python -c "import numba; print('before', numba.config.DISABLE_JIT); import raytracepy; print('after', numba.config.DISABLE_JIT)"
+before 1
+after False
+# 修复前：src/raytracepy/__init__.py 在导入时无条件执行
+#         numba.config.DISABLE_JIT = False，把环境变量又覆盖回去。
+
+$ NUMBA_DISABLE_JIT=1 python -c "import raytracepy, numba; print(numba.config.DISABLE_JIT)"
+1
+# 修复后：显式设置时被尊重；未设置时仍为 False（默认行为不变）。
+
+============================================================
+[4] 环境检测脚本
+============================================================
+$ python scripts/check_environment.py --boot-banner
+label        : linux-python310
+system       : Linux
+machine      : aarch64
+host gnu type: aarch64-alpine-linux-musl
+pip          : present 26.2.1
+njit compile+call: OK   returned 45.0   numba 0.61.2
+blockers     : none
+warnings     : none
+RESULT       : OK
+# 完整输出见同目录 check_environment.log，机器可读结果见 environment.json。
+# 注意：这里的 @njit 冒烟探针只验证"简单函数可编译并执行"，不能代表
+#       RayTracePy 自身的 JIT 路径可用——见 [1]。

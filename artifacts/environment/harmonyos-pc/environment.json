@@ -1,0 +1,203 @@
+{
+  "captured_at_utc": "2026-09-26T15:01:28.131827+00:00",
+  "git_commit": "07123679fca9bfd0138cdccb6173ffd5236a29cd",
+  "jit": {
+    "import_name": "numba.jit",
+    "jit_enabled": true,
+    "jit_result": 45.0,
+    "numba_version": "0.61.2",
+    "purpose": "compiles and calls an @njit kernel; RayTracePy's hot paths are all @njit",
+    "severity": "required",
+    "status": "present"
+  },
+  "label": "linux-python310",
+  "machine": "aarch64",
+  "packages": {
+    "datashader": "0.16.3",
+    "llvmlite": "0.44.0",
+    "numba": "0.61.2",
+    "numpy": "1.26.4",
+    "pandas": "2.2.3",
+    "plotly": "5.6.0",
+    "pytest": "9.1.1",
+    "pytest-cov": "7.1.0",
+    "raytracepy": "0.0.1",
+    "scipy": "1.15.3"
+  },
+  "platform": "HarmonyOS-HongMeng_Kernel_1.12.0-aarch64-64bit-ELF",
+  "platform_files": {
+    "/etc/config_sec_feature_release.json": "{\n    \"config\": [\n        {\n            \"featureCode\": \"0x0006\",\n            \"isCharging\": true,\n            \"network\": [\n                0,\n                1,\n                3\n            ],\n            \"interval\": 10080,\n            \"params\": {}\n        }\n    ]\n}",
+    "/proc/cpuinfo": "Features\t: fp asimd evtstrm aes pmull sha1 sha2 crc32 atomics fphp asimdhp cpuid asimdrdm jscvt fcma lrcpc dcpop sha3 sm3 sm4 asimddp sha512 sve asimdfhm dit uscat ilrcpc flagm ssbs sb paca pacg dcpodp flagm2 frint svei8mm svebf16 i8mm bf16 dgh bti\nCPU implementer\t: 0x48\nCPU architecture: 8\nCPU part\t: 0xd42\nFeatures\t: fp asimd evtstrm aes pmull sha1 sha2 crc32 atomics fphp asimdhp cpuid asimdrdm jscvt fcma lrcpc dcpop sha3 sm3 sm4 asimddp sha512 sve asimdfhm dit uscat ilrcpc flagm ssbs sb paca pacg dcpodp flagm2 frint svei8mm svebf16 i8mm bf16 dgh bti\nCPU implementer\t: 0x48\nCPU architecture: 8\nCPU part\t: 0xd42\nFeatures\t: fp asimd evtstrm aes pmull sha1 sha2 crc32 atomics fphp asimdhp cpuid asimdrdm jscvt fcma lrcpc dcpop sha3 sm3 sm4 asimddp sha512 sve asimdfhm dit uscat ilrcpc flagm ssbs sb paca pacg dcpodp flagm2 frint svei8mm svebf16 i8mm bf16 dgh bti\nCPU implementer\t: 0x48\nCPU architecture: 8\nCPU part\t: 0xd42\nFeatures\t: fp asimd evtstrm aes pmull sha1 sha2 crc32 atomics fphp asimdhp cpuid asimdrdm jscvt fcma lrcpc dcpop sha3 sm3 sm4 asimddp sha512 sve asimdfhm dit uscat ilrcpc flagm ssbs sb paca pacg dcpodp flagm2 frint svei8mm svebf16 i8mm bf16 dgh bti\nCPU implementer\t: 0x48\nCPU architecture: 8\nCPU part\t: 0xd42\nFeatures\t: fp asimd evtstrm aes pmull sha1 sha2 crc32 atomics fphp asimdhp cpuid asimdrdm jscvt fcma lrcpc dcpop sha3 sm3 sm4 asimddp sha512 sve asimdfhm dit uscat ilrcpc flagm ssbs sb paca pacg dcpodp flagm2 frint svei8mm svebf16 i8mm bf16 dgh bti\nCPU implementer\t: 0x48\nCPU architecture: 8\nCPU part\t: 0xd43\nFeatures\t: fp asimd evtstrm aes pmull sha1 sha2 crc32 atomics fphp asimdhp cpuid asimdrdm jscvt fcma lrcpc dcpop sha3 sm3 sm4 asimddp sha512 sve asimdfhm dit uscat ilrcpc flagm ssbs sb paca pacg dcpodp flagm2 frint svei8mm svebf16 i8mm bf16 dgh bti\nCPU implementer\t: 0x48\nCPU architecture: 8\nCPU part\t: 0xd43\nFeatures\t: fp asimd evtstrm aes pmull sha1 sha2 crc32 atomics fphp asimdhp cpuid asimdrdm jscvt fcma lrcpc dcpop sha3 sm3 sm4 asimddp sha512 sve asimdfhm dit uscat ilrcpc flagm ssbs sb paca pacg dcpodp flagm2 frint svei8mm svebf16 i8mm bf16 dgh bti\nCPU implementer\t: 0x48\nCPU architecture: 8\nCPU part\t: 0xd43\nFeatures\t: fp asimd evtstrm aes pmull sha1 sha2 crc32 atomics fphp asimdhp cpuid asimdrdm jscvt fcma lrcpc dcpop sha3 sm3 sm4 asimddp sha512 sve asimdfhm dit uscat ilrcpc flagm ssbs sb paca pacg dcpodp flagm2 frint svei8mm svebf16 i8mm bf16 dgh bti\nCPU implementer\t: 0x48\nCPU architecture: 8\nCPU part\t: 0xd43\nFeatures\t: fp asimd evtstrm aes pmull sha1 sha2 crc32 atomics fphp asimdhp cpuid asimdrdm jscvt fcma lrcpc dcpop sha3 sm3 sm4 asimddp sha512 sve asimdfhm dit uscat ilrcpc flagm ssbs sb paca pacg dcpodp flagm2 frint svei8mm svebf16 i8mm bf16 dgh bti\nCPU implementer\t: 0x48\nCPU architecture: 8\nCPU part\t: 0xd43\nFeatures\t: fp asimd evtstrm aes pmull sha1 sha2 crc32 atomics fphp asimdhp cpuid asimdrdm jscvt fcma lrcpc dcpop sha3 sm3 sm4 asimddp sha512 sve asimdfhm dit uscat ilrcpc flagm ssbs sb paca pacg dcpodp flagm2 frint svei8mm svebf16 i8mm bf16 dgh bti\nCPU implementer\t: 0x48\nCPU architecture: 8\nCPU part\t: 0xd43",
+    "/proc/meminfo": "MemTotal:       32680652 kB\nMemAvailable:   12887040 kB\nSwapTotal:      52428800 kB"
+  },
+  "probes": [
+    {
+      "distribution": "numpy",
+      "distribution_version": "1.26.4",
+      "file": "/storage/Users/currentUser/harmony/raytracepy/.venv/lib/python3.10/site-packages/numpy/__init__.py",
+      "import_name": "numpy",
+      "module_version": "1.26.4",
+      "purpose": "core array maths; imported by every RayTracePy module",
+      "severity": "required",
+      "status": "present"
+    },
+    {
+      "distribution": "numba",
+      "distribution_version": "0.61.2",
+      "file": "/storage/Users/currentUser/harmony/raytracepy/.venv/lib/python3.10/site-packages/numba/__init__.py",
+      "import_name": "numba",
+      "module_version": "0.61.2",
+      "purpose": "imported at `import raytracepy` time; JIT backend",
+      "severity": "required",
+      "status": "present"
+    },
+    {
+      "distribution": "plotly",
+      "distribution_version": "5.6.0",
+      "file": "/storage/Users/currentUser/harmony/raytracepy/.venv/lib/python3.10/site-packages/plotly/__init__.py",
+      "import_name": "plotly",
+      "module_version": "5.6.0",
+      "purpose": "imported by light, plane, raytrace and light_layouts",
+      "severity": "required",
+      "status": "present"
+    },
+    {
+      "distribution": "pandas",
+      "distribution_version": "2.2.3",
+      "file": "/storage/Users/currentUser/harmony/raytracepy/.venv/lib/python3.10/site-packages/pandas/__init__.py",
+      "import_name": "pandas",
+      "module_version": "2.2.3",
+      "purpose": "imported by raytracepy.plane",
+      "severity": "required",
+      "status": "present"
+    },
+    {
+      "distribution": "scipy",
+      "distribution_version": "1.15.3",
+      "file": "/storage/Users/currentUser/harmony/raytracepy/.venv/lib/python3.10/site-packages/scipy/__init__.py",
+      "import_name": "scipy",
+      "module_version": "1.15.3",
+      "purpose": "scipy.integrate quadrature in raytracepy.ref_data",
+      "severity": "important",
+      "status": "present"
+    },
+    {
+      "distribution": "llvmlite",
+      "distribution_version": "0.44.0",
+      "file": "/storage/Users/currentUser/harmony/raytracepy/.venv/lib/python3.10/site-packages/llvmlite/__init__.py",
+      "import_name": "llvmlite",
+      "module_version": "0.44.0",
+      "purpose": "LLVM bindings required by numba",
+      "severity": "important",
+      "status": "present"
+    },
+    {
+      "distribution": "datashader",
+      "distribution_version": "0.16.3",
+      "file": "/storage/Users/currentUser/harmony/raytracepy/.venv/lib/python3.10/site-packages/datashader/__init__.py",
+      "import_name": "datashader",
+      "module_version": "0.16.3",
+      "purpose": "heatmap figures in examples only; NOT needed to import the package",
+      "severity": "optional",
+      "status": "present"
+    },
+    {
+      "distribution": "pytest",
+      "distribution_version": "9.1.1",
+      "file": "/storage/Users/currentUser/harmony/raytracepy/.venv/lib/python3.10/site-packages/pytest/__init__.py",
+      "import_name": "pytest",
+      "module_version": "9.1.1",
+      "purpose": "automated test runner",
+      "severity": "optional",
+      "status": "present"
+    }
+  ],
+  "processor": "",
+  "project_root": "/storage/Users/currentUser/harmony/raytracepy",
+  "python": {
+    "gil_disabled": false,
+    "host_gnu_type": "aarch64-alpine-linux-musl",
+    "in_virtualenv": true,
+    "pyspec_platform": "linux-aarch64",
+    "python_base_prefix": "/storage/Users/currentUser/.local/alpine-py310/usr",
+    "python_cache_tag": "cpython-310",
+    "python_debug_build": false,
+    "python_executable": "/storage/Users/currentUser/harmony/raytracepy/.venv/bin/python",
+    "python_full_version": "3.10.15 (main, Sep 11 2024, 09:20:18) [GCC 12.2.1 20220924]",
+    "python_implementation": "CPython",
+    "python_prefix": "/storage/Users/currentUser/harmony/raytracepy/.venv",
+    "python_version": "3.10.15",
+    "satisfies_python_requires": true
+  },
+  "python_executable": "/storage/Users/currentUser/harmony/raytracepy/.venv/bin/python",
+  "python_implementation": "CPython",
+  "python_version": "3.10.15",
+  "raytracepy": {
+    "distribution_version": "0.0.1",
+    "from_environment": {
+      "file": "/storage/Users/currentUser/harmony/raytracepy/src/raytracepy/__init__.py",
+      "import_name": "raytracepy",
+      "module_version": null,
+      "source": "installed / ambient sys.path",
+      "status": "present"
+    },
+    "from_source_tree": {
+      "file": "/storage/Users/currentUser/harmony/raytracepy/src/raytracepy/__init__.py",
+      "import_name": "raytracepy",
+      "source": "src/ prepended to sys.path",
+      "status": "present"
+    }
+  },
+  "raytracepy_import_path": "/storage/Users/currentUser/harmony/raytracepy/src/raytracepy/__init__.py",
+  "release": "HongMeng Kernel 1.12.0",
+  "schema_version": 1,
+  "script": "/storage/Users/currentUser/harmony/raytracepy/scripts/check_environment.py",
+  "summary": {
+    "architecture": "aarch64",
+    "blocked": false,
+    "blockers": [],
+    "jit_status": "present",
+    "missing_important": [],
+    "missing_optional": [],
+    "missing_required": [],
+    "python_version": "3.10.15",
+    "system": "Linux",
+    "verdict": "OK",
+    "warnings": []
+  },
+  "system": "Linux",
+  "system_info": {
+    "cpu_count": 20,
+    "hostname": "localhost",
+    "is_64bit": true,
+    "libc": null,
+    "machine": "aarch64",
+    "platform": "HarmonyOS-HongMeng_Kernel_1.12.0-aarch64-64bit-ELF",
+    "processor": "",
+    "release": "HongMeng Kernel 1.12.0",
+    "system": "Linux",
+    "uname": "HarmonyOS localhost HongMeng Kernel 1.12.0 #1 SMP Wed Apr 29 10:16:03 UTC 2026 aarch64 Toybox",
+    "version": "#1 SMP Wed Apr 29 10:16:03 UTC 2026"
+  },
+  "toolchain": {
+    "compilers": {
+      "clang": "/data/service/hnp/bin/clang :: clang version 15.0.4 (/srv/workspace/llvm-release/2026_0313_llvm15_release/toolchain/llvm-project/clang 0e01a01d567b9acfce8edfdadb66a7b69f088fb0)",
+      "clang++": "/data/service/hnp/bin/clang++ :: clang version 15.0.4 (/srv/workspace/llvm-release/2026_0313_llvm15_release/toolchain/llvm-project/clang 0e01a01d567b9acfce8edfdadb66a7b69f088fb0)"
+    },
+    "ensurepip_importable": true,
+    "make_available": true,
+    "openssl_version": "OpenSSL 3.0.19 27 Jan 2026",
+    "pip_available": true,
+    "pip_index_url": null,
+    "pip_path": "/storage/Users/currentUser/harmony/raytracepy/.venv/lib/python3.10/site-packages/pip",
+    "pip_version": "26.2.1",
+    "setuptools_meets_minimum": true,
+    "setuptools_version": "65.5.0",
+    "ssl_available": true,
+    "venv_importable": true,
+    "wheel_version": "0.48.0"
+  },
+  "windows_only_artifacts": [
+    "math_custom.cp310-win_amd64.pyd"
+  ]
+}

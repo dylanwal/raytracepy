@@ -1,0 +1,275 @@
+# install_dependencies_harmonyos.py 验证日志
+# 采集：1号  2026-09-28  目标设备（HAD-W32, HarmonyOS 6.1.0, aarch64）
+# 方式：新建空 venv → 运行 scripts/install_dependencies_harmonyos.py → 导入/冒烟/测试
+# 结果：脚本退出码 0；import OK；冒烟仿真 OK；pytest 7 passed
+
++ cd /storage/Users/currentUser/harmony/raytracepy
++ export PIP_CACHE_DIR=/storage/Users/currentUser/harmony/raytracepy/.venv-pipcache
++ PIP_CACHE_DIR=/storage/Users/currentUser/harmony/raytracepy/.venv-pipcache
++ rm -rf .venv-scripttest
++ .venv/bin/python -m venv .venv-scripttest
++ P=.venv-scripttest/bin/python
++ .venv-scripttest/bin/python -m pip install -q --upgrade pip
++ echo '== 运行修好的安装脚本 =='
+== 运行修好的安装脚本 ==
++ .venv-scripttest/bin/python .worktrees/deps/scripts/install_dependencies_harmonyos.py --tools-dir /storage/Users/currentUser/.local/ohos-python-tools
+== 1/5 numpy ==
++ /storage/Users/currentUser/harmony/raytracepy/.venv-scripttest/bin/python -m pip install --index-url https://pypi.org/simple numpy==1.26.4
+Collecting numpy==1.26.4
+  Downloading numpy-1.26.4-cp310-cp310-musllinux_1_1_aarch64.whl.metadata (62 kB)
+Downloading numpy-1.26.4-cp310-cp310-musllinux_1_1_aarch64.whl (13.9 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 13.9/13.9 MB 17.0 MB/s  0:00:00
+Installing collected packages: numpy
+Successfully installed numpy-1.26.4
+== 2/5 llvmlite + numba (device wheels) ==
++ /storage/Users/currentUser/harmony/raytracepy/.venv-scripttest/bin/python -m pip install --index-url https://pypi.org/simple /storage/Users/currentUser/.local/ohos-python-tools/wheels/llvmlite-0.44.0-cp310-cp310-linux_aarch64.whl /storage/Users/currentUser/.local/ohos-python-tools/wheels/numba-0.61.2-cp310-cp310-linux_aarch64.whl
+Processing /storage/Users/currentUser/.local/ohos-python-tools/wheels/llvmlite-0.44.0-cp310-cp310-linux_aarch64.whl
+Processing /storage/Users/currentUser/.local/ohos-python-tools/wheels/numba-0.61.2-cp310-cp310-linux_aarch64.whl
+Requirement already satisfied: numpy<2.3,>=1.24 in /storage/Users/currentUser/harmony/raytracepy/.venv-scripttest/lib/python3.10/site-packages (from numba==0.61.2) (1.26.4)
+Installing collected packages: llvmlite, numba
+
+Successfully installed llvmlite-0.44.0 numba-0.61.2
+== 3/5 remaining pins ==
++ /storage/Users/currentUser/harmony/raytracepy/.venv-scripttest/bin/python -m pip install --index-url https://pypi.org/simple -r /storage/Users/currentUser/harmony/raytracepy/.worktrees/deps/requirements-harmonyos.txt
+Requirement already satisfied: numpy==1.26.4 in /storage/Users/currentUser/harmony/raytracepy/.venv-scripttest/lib/python3.10/site-packages (from -r /storage/Users/currentUser/harmony/raytracepy/.worktrees/deps/requirements-harmonyos.txt (line 20)) (1.26.4)
+Collecting scipy==1.15.3 (from -r /storage/Users/currentUser/harmony/raytracepy/.worktrees/deps/requirements-harmonyos.txt (line 21))
+  Downloading scipy-1.15.3-cp310-cp310-musllinux_1_2_aarch64.whl.metadata (61 kB)
+Collecting pandas==2.2.3 (from -r /storage/Users/currentUser/harmony/raytracepy/.worktrees/deps/requirements-harmonyos.txt (line 22))
+  Downloading pandas-2.2.3-cp310-cp310-musllinux_1_2_aarch64.whl.metadata (89 kB)
+Collecting plotly==5.6.0 (from -r /storage/Users/currentUser/harmony/raytracepy/.worktrees/deps/requirements-harmonyos.txt (line 23))
+  Downloading plotly-5.6.0-py2.py3-none-any.whl.metadata (7.1 kB)
+Collecting datashader==0.16.3 (from -r /storage/Users/currentUser/harmony/raytracepy/.worktrees/deps/requirements-harmonyos.txt (line 24))
+  Downloading datashader-0.16.3-py2.py3-none-any.whl.metadata (12 kB)
+Collecting dask==2023.3.0 (from -r /storage/Users/currentUser/harmony/raytracepy/.worktrees/deps/requirements-harmonyos.txt (line 25))
+  Downloading dask-2023.3.0-py3-none-any.whl.metadata (3.6 kB)
+Collecting colorcet==3.2.1 (from -r /storage/Users/currentUser/harmony/raytracepy/.worktrees/deps/requirements-harmonyos.txt (line 28))
+  Downloading colorcet-3.2.1-py3-none-any.whl.metadata (6.3 kB)
+Collecting param==2.4.2 (from -r /storage/Users/currentUser/harmony/raytracepy/.worktrees/deps/requirements-harmonyos.txt (line 29))
+  Downloading param-2.4.2-py3-none-any.whl.metadata (22 kB)
+Collecting pyct==0.6.0 (from -r /storage/Users/currentUser/harmony/raytracepy/.worktrees/deps/requirements-harmonyos.txt (line 30))
+  Downloading pyct-0.6.0-py3-none-any.whl.metadata (7.2 kB)
+Collecting xarray==2025.6.1 (from -r /storage/Users/currentUser/harmony/raytracepy/.worktrees/deps/requirements-harmonyos.txt (line 31))
+  Downloading xarray-2025.6.1-py3-none-any.whl.metadata (12 kB)
+Collecting cloudpickle==3.1.2 (from -r /storage/Users/currentUser/harmony/raytracepy/.worktrees/deps/requirements-harmonyos.txt (line 32))
+  Downloading cloudpickle-3.1.2-py3-none-any.whl.metadata (7.1 kB)
+Collecting fsspec==2026.9.0 (from -r /storage/Users/currentUser/harmony/raytracepy/.worktrees/deps/requirements-harmonyos.txt (line 33))
+  Downloading fsspec-2026.9.0-py3-none-any.whl.metadata (10 kB)
+Collecting locket==1.0.0 (from -r /storage/Users/currentUser/harmony/raytracepy/.worktrees/deps/requirements-harmonyos.txt (line 34))
+  Downloading locket-1.0.0-py2.py3-none-any.whl.metadata (2.8 kB)
+Collecting partd==1.4.2 (from -r /storage/Users/currentUser/harmony/raytracepy/.worktrees/deps/requirements-harmonyos.txt (line 35))
+  Downloading partd-1.4.2-py3-none-any.whl.metadata (4.6 kB)
+Collecting toolz==1.1.0 (from -r /storage/Users/currentUser/harmony/raytracepy/.worktrees/deps/requirements-harmonyos.txt (line 36))
+  Downloading toolz-1.1.0-py3-none-any.whl.metadata (5.1 kB)
+Collecting multipledispatch==1.0.0 (from -r /storage/Users/currentUser/harmony/raytracepy/.worktrees/deps/requirements-harmonyos.txt (line 37))
+  Downloading multipledispatch-1.0.0-py3-none-any.whl.metadata (3.8 kB)
+Collecting pillow==12.3.0 (from -r /storage/Users/currentUser/harmony/raytracepy/.worktrees/deps/requirements-harmonyos.txt (line 38))
+  Downloading pillow-12.3.0-cp310-cp310-musllinux_1_2_aarch64.whl.metadata (9.1 kB)
+Collecting packaging==26.3 (from -r /storage/Users/currentUser/harmony/raytracepy/.worktrees/deps/requirements-harmonyos.txt (line 39))
+  Downloading packaging-26.3-py3-none-any.whl.metadata (3.5 kB)
+Collecting certifi==2026.7.22 (from -r /storage/Users/currentUser/harmony/raytracepy/.worktrees/deps/requirements-harmonyos.txt (line 42))
+  Downloading certifi-2026.7.22-py3-none-any.whl.metadata (2.5 kB)
+Collecting charset-normalizer==3.5.1 (from -r /storage/Users/currentUser/harmony/raytracepy/.worktrees/deps/requirements-harmonyos.txt (line 43))
+  Downloading charset_normalizer-3.5.1-cp310-cp310-musllinux_1_2_aarch64.whl.metadata (45 kB)
+Collecting click==8.5.0 (from -r /storage/Users/currentUser/harmony/raytracepy/.worktrees/deps/requirements-harmonyos.txt (line 44))
+  Downloading click-8.5.0-py3-none-any.whl.metadata (2.6 kB)
+Collecting idna==3.20 (from -r /storage/Users/currentUser/harmony/raytracepy/.worktrees/deps/requirements-harmonyos.txt (line 45))
+  Downloading idna-3.20-py3-none-any.whl.metadata (7.2 kB)
+Collecting importlib_metadata==9.0.1 (from -r /storage/Users/currentUser/harmony/raytracepy/.worktrees/deps/requirements-harmonyos.txt (line 46))
+  Downloading importlib_metadata-9.0.1-py3-none-any.whl.metadata (4.5 kB)
+Collecting requests==2.34.2 (from -r /storage/Users/currentUser/harmony/raytracepy/.worktrees/deps/requirements-harmonyos.txt (line 47))
+  Downloading requests-2.34.2-py3-none-any.whl.metadata (4.8 kB)
+Collecting six==1.17.0 (from -r /storage/Users/currentUser/harmony/raytracepy/.worktrees/deps/requirements-harmonyos.txt (line 48))
+  Downloading six-1.17.0-py2.py3-none-any.whl.metadata (1.7 kB)
+Collecting tenacity==9.1.4 (from -r /storage/Users/currentUser/harmony/raytracepy/.worktrees/deps/requirements-harmonyos.txt (line 49))
+  Downloading tenacity-9.1.4-py3-none-any.whl.metadata (1.2 kB)
+Collecting typing_extensions==4.16.0 (from -r /storage/Users/currentUser/harmony/raytracepy/.worktrees/deps/requirements-harmonyos.txt (line 50))
+  Downloading typing_extensions-4.16.0-py3-none-any.whl.metadata (3.3 kB)
+Collecting urllib3==2.8.0 (from -r /storage/Users/currentUser/harmony/raytracepy/.worktrees/deps/requirements-harmonyos.txt (line 51))
+  Downloading urllib3-2.8.0-py3-none-any.whl.metadata (7.4 kB)
+Collecting zipp==4.1.0 (from -r /storage/Users/currentUser/harmony/raytracepy/.worktrees/deps/requirements-harmonyos.txt (line 52))
+  Downloading zipp-4.1.0-py3-none-any.whl.metadata (3.6 kB)
+Collecting python-dateutil==2.9.0.post0 (from -r /storage/Users/currentUser/harmony/raytracepy/.worktrees/deps/requirements-harmonyos.txt (line 53))
+  Downloading python_dateutil-2.9.0.post0-py2.py3-none-any.whl.metadata (8.4 kB)
+Collecting pytz==2026.4 (from -r /storage/Users/currentUser/harmony/raytracepy/.worktrees/deps/requirements-harmonyos.txt (line 54))
+  Downloading pytz-2026.4-py2.py3-none-any.whl.metadata (22 kB)
+Collecting tzdata==2026.4 (from -r /storage/Users/currentUser/harmony/raytracepy/.worktrees/deps/requirements-harmonyos.txt (line 55))
+  Downloading tzdata-2026.4-py2.py3-none-any.whl.metadata (1.4 kB)
+Collecting PyYAML==6.0.3 (from -r /storage/Users/currentUser/harmony/raytracepy/.worktrees/deps/requirements-harmonyos.txt (line 56))
+  Downloading pyyaml-6.0.3-cp310-cp310-musllinux_1_2_aarch64.whl.metadata (2.4 kB)
+Collecting pytest==9.1.1 (from -r /storage/Users/currentUser/harmony/raytracepy/.worktrees/deps/requirements-harmonyos.txt (line 59))
+  Downloading pytest-9.1.1-py3-none-any.whl.metadata (7.6 kB)
+Collecting pytest-cov==7.1.0 (from -r /storage/Users/currentUser/harmony/raytracepy/.worktrees/deps/requirements-harmonyos.txt (line 60))
+  Downloading pytest_cov-7.1.0-py3-none-any.whl.metadata (32 kB)
+Collecting coverage==7.16.1 (from -r /storage/Users/currentUser/harmony/raytracepy/.worktrees/deps/requirements-harmonyos.txt (line 61))
+  Downloading coverage-7.16.1-cp310-cp310-musllinux_1_2_aarch64.whl.metadata (8.2 kB)
+Collecting iniconfig==2.3.0 (from -r /storage/Users/currentUser/harmony/raytracepy/.worktrees/deps/requirements-harmonyos.txt (line 62))
+  Downloading iniconfig-2.3.0-py3-none-any.whl.metadata (2.5 kB)
+Collecting pluggy==1.6.0 (from -r /storage/Users/currentUser/harmony/raytracepy/.worktrees/deps/requirements-harmonyos.txt (line 63))
+  Downloading pluggy-1.6.0-py3-none-any.whl.metadata (4.8 kB)
+Collecting Pygments==2.21.0 (from -r /storage/Users/currentUser/harmony/raytracepy/.worktrees/deps/requirements-harmonyos.txt (line 64))
+  Downloading pygments-2.21.0-py3-none-any.whl.metadata (2.5 kB)
+Collecting exceptiongroup==1.3.1 (from -r /storage/Users/currentUser/harmony/raytracepy/.worktrees/deps/requirements-harmonyos.txt (line 65))
+  Downloading exceptiongroup-1.3.1-py3-none-any.whl.metadata (6.7 kB)
+Collecting tomli==2.4.1 (from -r /storage/Users/currentUser/harmony/raytracepy/.worktrees/deps/requirements-harmonyos.txt (line 66))
+  Downloading tomli-2.4.1-py3-none-any.whl.metadata (10 kB)
+Requirement already satisfied: numba in /storage/Users/currentUser/harmony/raytracepy/.venv-scripttest/lib/python3.10/site-packages (from datashader==0.16.3->-r /storage/Users/currentUser/harmony/raytracepy/.worktrees/deps/requirements-harmonyos.txt (line 24)) (0.61.2)
+Requirement already satisfied: llvmlite<0.45,>=0.44.0dev0 in /storage/Users/currentUser/harmony/raytracepy/.venv-scripttest/lib/python3.10/site-packages (from numba->datashader==0.16.3->-r /storage/Users/currentUser/harmony/raytracepy/.worktrees/deps/requirements-harmonyos.txt (line 24)) (0.44.0)
+Downloading scipy-1.15.3-cp310-cp310-musllinux_1_2_aarch64.whl (37.2 MB)
+   ━━━━━━━━━━━━━━━━━━                       16.8/37.2 MB 15.7 MB/s eta 0:00:02
+WARNING: Connection interrupted while downloading.
+WARNING: Attempting to resume incomplete download (16.8 MB/37.2 MB, attempt 1)
+Resuming download scipy-1.15.3-cp310-cp310-musllinux_1_2_aarch64.whl (16.8 MB/37.2 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 37.2/37.2 MB 16.9 MB/s  0:00:01
+Downloading pandas-2.2.3-cp310-cp310-musllinux_1_2_aarch64.whl (16.8 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 16.8/16.8 MB 21.2 MB/s  0:00:00
+Downloading plotly-5.6.0-py2.py3-none-any.whl (27.7 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 27.7/27.7 MB 22.7 MB/s  0:00:01
+Downloading datashader-0.16.3-py2.py3-none-any.whl (18.3 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 18.3/18.3 MB 23.4 MB/s  0:00:00
+Downloading dask-2023.3.0-py3-none-any.whl (1.2 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.2/1.2 MB 10.9 MB/s  0:00:00
+Downloading colorcet-3.2.1-py3-none-any.whl (262 kB)
+Downloading param-2.4.2-py3-none-any.whl (155 kB)
+Downloading pyct-0.6.0-py3-none-any.whl (16 kB)
+Downloading xarray-2025.6.1-py3-none-any.whl (1.3 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.3/1.3 MB 10.7 MB/s  0:00:00
+Downloading cloudpickle-3.1.2-py3-none-any.whl (22 kB)
+Downloading fsspec-2026.9.0-py3-none-any.whl (221 kB)
+Downloading locket-1.0.0-py2.py3-none-any.whl (4.4 kB)
+Downloading partd-1.4.2-py3-none-any.whl (18 kB)
+Downloading toolz-1.1.0-py3-none-any.whl (58 kB)
+Downloading multipledispatch-1.0.0-py3-none-any.whl (12 kB)
+Downloading pillow-12.3.0-cp310-cp310-musllinux_1_2_aarch64.whl (6.3 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 6.3/6.3 MB 18.1 MB/s  0:00:00
+Downloading packaging-26.3-py3-none-any.whl (129 kB)
+Downloading certifi-2026.7.22-py3-none-any.whl (136 kB)
+Downloading charset_normalizer-3.5.1-cp310-cp310-musllinux_1_2_aarch64.whl (252 kB)
+Downloading click-8.5.0-py3-none-any.whl (125 kB)
+Downloading idna-3.20-py3-none-any.whl (69 kB)
+Downloading importlib_metadata-9.0.1-py3-none-any.whl (27 kB)
+Downloading requests-2.34.2-py3-none-any.whl (73 kB)
+Downloading urllib3-2.8.0-py3-none-any.whl (135 kB)
+Downloading six-1.17.0-py2.py3-none-any.whl (11 kB)
+Downloading tenacity-9.1.4-py3-none-any.whl (28 kB)
+Downloading typing_extensions-4.16.0-py3-none-any.whl (45 kB)
+Downloading zipp-4.1.0-py3-none-any.whl (10 kB)
+Downloading python_dateutil-2.9.0.post0-py2.py3-none-any.whl (229 kB)
+Downloading pytz-2026.4-py2.py3-none-any.whl (506 kB)
+Downloading tzdata-2026.4-py2.py3-none-any.whl (347 kB)
+Downloading pyyaml-6.0.3-cp310-cp310-musllinux_1_2_aarch64.whl (732 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 732.9/732.9 kB 9.5 MB/s  0:00:00
+Downloading pytest-9.1.1-py3-none-any.whl (386 kB)
+Downloading pluggy-1.6.0-py3-none-any.whl (20 kB)
+Downloading pytest_cov-7.1.0-py3-none-any.whl (22 kB)
+Downloading coverage-7.16.1-cp310-cp310-musllinux_1_2_aarch64.whl (252 kB)
+Downloading iniconfig-2.3.0-py3-none-any.whl (7.5 kB)
+Downloading pygments-2.21.0-py3-none-any.whl (1.3 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.3/1.3 MB 12.3 MB/s  0:00:00
+Downloading exceptiongroup-1.3.1-py3-none-any.whl (16 kB)
+Downloading tomli-2.4.1-py3-none-any.whl (14 kB)
+Installing collected packages: pytz, multipledispatch, zipp, urllib3, tzdata, typing_extensions, toolz, tomli, tenacity, six, scipy, PyYAML, Pygments, pluggy, pillow, param, packaging, locket, iniconfig, idna, fsspec, coverage, colorcet, cloudpickle, click, charset-normalizer, certifi, requests, python-dateutil, pyct, plotly, partd, importlib_metadata, exceptiongroup, pytest, pandas, dask, xarray, pytest-cov, datashader
+
+Successfully installed PyYAML-6.0.3 Pygments-2.21.0 certifi-2026.7.22 charset-normalizer-3.5.1 click-8.5.0 cloudpickle-3.1.2 colorcet-3.2.1 coverage-7.16.1 dask-2023.3.0 datashader-0.16.3 exceptiongroup-1.3.1 fsspec-2026.9.0 idna-3.20 importlib_metadata-9.0.1 iniconfig-2.3.0 locket-1.0.0 multipledispatch-1.0.0 packaging-26.3 pandas-2.2.3 param-2.4.2 partd-1.4.2 pillow-12.3.0 plotly-5.6.0 pluggy-1.6.0 pyct-0.6.0 pytest-9.1.1 pytest-cov-7.1.0 python-dateutil-2.9.0.post0 pytz-2026.4 requests-2.34.2 scipy-1.15.3 six-1.17.0 tenacity-9.1.4 tomli-2.4.1 toolz-1.1.0 typing_extensions-4.16.0 tzdata-2026.4 urllib3-2.8.0 xarray-2025.6.1 zipp-4.1.0
+== 4/5 fixall (ELF metadata + musl compat + signing) ==
++ /storage/Users/currentUser/harmony/raytracepy/.venv-scripttest/bin/python /storage/Users/currentUser/.local/ohos-python-tools/fixall.py /storage/Users/currentUser/harmony/raytracepy/.venv-scripttest/lib/python3.10/site-packages
+== 1/3 修补 ELF 链接与签名 ==
+修补 235 | 仅重签 1 | 失败 0
+== 2/3 接入 musl-compat ==
+libc 符号 1942 | musl-compat 符号 38
+  接入 musl-compat: pillow.libs/libzstd-65db3951.so.1.5.7  (缺 1 个符号, 如 ['qsort_r'])
+共修补 1 个 ELF
+== 3/3 重新签名 ==
+修补 236 | 仅重签 0 | 失败 0
+完成
+== 5/5 add_stlshim (numba extensions) ==
++ /storage/Users/currentUser/harmony/raytracepy/.venv-scripttest/bin/python /storage/Users/currentUser/.local/ohos-python-tools/add_stlshim.py /storage/Users/currentUser/harmony/raytracepy/.venv-scripttest/lib/python3.10/site-packages
+  已链接 shim: numba/_dispatcher.cpython-310-aarch64-linux-gnu.so
+  已链接 shim: numba/core/typeconv/_typeconv.cpython-310-aarch64-linux-gnu.so
+  已链接 shim: numba/np/ufunc/omppool.cpython-310-aarch64-linux-gnu.so
+  已链接 shim: numba/np/ufunc/workqueue.cpython-310-aarch64-linux-gnu.so
+共修补 4 个扩展
+== raytracepy ==
++ /storage/Users/currentUser/harmony/raytracepy/.venv-scripttest/bin/python -m pip install -e /storage/Users/currentUser/harmony/raytracepy/.worktrees/deps
+Obtaining file:///storage/Users/currentUser/harmony/raytracepy/.worktrees/deps
+  Installing build dependencies: started
+  Installing build dependencies: finished with status 'done'
+  Checking if build backend supports build_editable: started
+  Checking if build backend supports build_editable: finished with status 'done'
+  Getting requirements to build editable: started
+  Getting requirements to build editable: finished with status 'done'
+  Preparing editable metadata (pyproject.toml): started
+  Preparing editable metadata (pyproject.toml): finished with status 'done'
+Requirement already satisfied: numpy>=1.19.0 in /storage/Users/currentUser/harmony/raytracepy/.venv-scripttest/lib/python3.10/site-packages (from raytracepy==0.0.1) (1.26.4)
+Requirement already satisfied: numba>=0.53.1 in /storage/Users/currentUser/harmony/raytracepy/.venv-scripttest/lib/python3.10/site-packages (from raytracepy==0.0.1) (0.61.2)
+Requirement already satisfied: plotly>=5.3.1 in /storage/Users/currentUser/harmony/raytracepy/.venv-scripttest/lib/python3.10/site-packages (from raytracepy==0.0.1) (5.6.0)
+Requirement already satisfied: scipy>=1.7.1 in /storage/Users/currentUser/harmony/raytracepy/.venv-scripttest/lib/python3.10/site-packages (from raytracepy==0.0.1) (1.15.3)
+Requirement already satisfied: pandas>=1.4.1 in /storage/Users/currentUser/harmony/raytracepy/.venv-scripttest/lib/python3.10/site-packages (from raytracepy==0.0.1) (2.2.3)
+Requirement already satisfied: datashader>=0.13.0 in /storage/Users/currentUser/harmony/raytracepy/.venv-scripttest/lib/python3.10/site-packages (from raytracepy==0.0.1) (0.16.3)
+Requirement already satisfied: colorcet in /storage/Users/currentUser/harmony/raytracepy/.venv-scripttest/lib/python3.10/site-packages (from datashader>=0.13.0->raytracepy==0.0.1) (3.2.1)
+Requirement already satisfied: dask in /storage/Users/currentUser/harmony/raytracepy/.venv-scripttest/lib/python3.10/site-packages (from datashader>=0.13.0->raytracepy==0.0.1) (2023.3.0)
+Requirement already satisfied: multipledispatch in /storage/Users/currentUser/harmony/raytracepy/.venv-scripttest/lib/python3.10/site-packages (from datashader>=0.13.0->raytracepy==0.0.1) (1.0.0)
+Requirement already satisfied: param in /storage/Users/currentUser/harmony/raytracepy/.venv-scripttest/lib/python3.10/site-packages (from datashader>=0.13.0->raytracepy==0.0.1) (2.4.2)
+Requirement already satisfied: pillow in /storage/Users/currentUser/harmony/raytracepy/.venv-scripttest/lib/python3.10/site-packages (from datashader>=0.13.0->raytracepy==0.0.1) (12.3.0)
+Requirement already satisfied: pyct in /storage/Users/currentUser/harmony/raytracepy/.venv-scripttest/lib/python3.10/site-packages (from datashader>=0.13.0->raytracepy==0.0.1) (0.6.0)
+Requirement already satisfied: requests in /storage/Users/currentUser/harmony/raytracepy/.venv-scripttest/lib/python3.10/site-packages (from datashader>=0.13.0->raytracepy==0.0.1) (2.34.2)
+Requirement already satisfied: toolz in /storage/Users/currentUser/harmony/raytracepy/.venv-scripttest/lib/python3.10/site-packages (from datashader>=0.13.0->raytracepy==0.0.1) (1.1.0)
+Requirement already satisfied: packaging in /storage/Users/currentUser/harmony/raytracepy/.venv-scripttest/lib/python3.10/site-packages (from datashader>=0.13.0->raytracepy==0.0.1) (26.3)
+Requirement already satisfied: xarray in /storage/Users/currentUser/harmony/raytracepy/.venv-scripttest/lib/python3.10/site-packages (from datashader>=0.13.0->raytracepy==0.0.1) (2025.6.1)
+Requirement already satisfied: llvmlite<0.45,>=0.44.0dev0 in /storage/Users/currentUser/harmony/raytracepy/.venv-scripttest/lib/python3.10/site-packages (from numba>=0.53.1->raytracepy==0.0.1) (0.44.0)
+Requirement already satisfied: python-dateutil>=2.8.2 in /storage/Users/currentUser/harmony/raytracepy/.venv-scripttest/lib/python3.10/site-packages (from pandas>=1.4.1->raytracepy==0.0.1) (2.9.0.post0)
+Requirement already satisfied: pytz>=2020.1 in /storage/Users/currentUser/harmony/raytracepy/.venv-scripttest/lib/python3.10/site-packages (from pandas>=1.4.1->raytracepy==0.0.1) (2026.4)
+Requirement already satisfied: tzdata>=2022.7 in /storage/Users/currentUser/harmony/raytracepy/.venv-scripttest/lib/python3.10/site-packages (from pandas>=1.4.1->raytracepy==0.0.1) (2026.4)
+Requirement already satisfied: tenacity>=6.2.0 in /storage/Users/currentUser/harmony/raytracepy/.venv-scripttest/lib/python3.10/site-packages (from plotly>=5.3.1->raytracepy==0.0.1) (9.1.4)
+Requirement already satisfied: six in /storage/Users/currentUser/harmony/raytracepy/.venv-scripttest/lib/python3.10/site-packages (from plotly>=5.3.1->raytracepy==0.0.1) (1.17.0)
+Requirement already satisfied: click>=7.0 in /storage/Users/currentUser/harmony/raytracepy/.venv-scripttest/lib/python3.10/site-packages (from dask->datashader>=0.13.0->raytracepy==0.0.1) (8.5.0)
+Requirement already satisfied: cloudpickle>=1.1.1 in /storage/Users/currentUser/harmony/raytracepy/.venv-scripttest/lib/python3.10/site-packages (from dask->datashader>=0.13.0->raytracepy==0.0.1) (3.1.2)
+Requirement already satisfied: fsspec>=0.6.0 in /storage/Users/currentUser/harmony/raytracepy/.venv-scripttest/lib/python3.10/site-packages (from dask->datashader>=0.13.0->raytracepy==0.0.1) (2026.9.0)
+Requirement already satisfied: partd>=1.2.0 in /storage/Users/currentUser/harmony/raytracepy/.venv-scripttest/lib/python3.10/site-packages (from dask->datashader>=0.13.0->raytracepy==0.0.1) (1.4.2)
+Requirement already satisfied: pyyaml>=5.3.1 in /storage/Users/currentUser/harmony/raytracepy/.venv-scripttest/lib/python3.10/site-packages (from dask->datashader>=0.13.0->raytracepy==0.0.1) (6.0.3)
+Requirement already satisfied: locket in /storage/Users/currentUser/harmony/raytracepy/.venv-scripttest/lib/python3.10/site-packages (from partd>=1.2.0->dask->datashader>=0.13.0->raytracepy==0.0.1) (1.0.0)
+Requirement already satisfied: charset_normalizer<4,>=2 in /storage/Users/currentUser/harmony/raytracepy/.venv-scripttest/lib/python3.10/site-packages (from requests->datashader>=0.13.0->raytracepy==0.0.1) (3.5.1)
+Requirement already satisfied: idna<4,>=2.5 in /storage/Users/currentUser/harmony/raytracepy/.venv-scripttest/lib/python3.10/site-packages (from requests->datashader>=0.13.0->raytracepy==0.0.1) (3.20)
+Requirement already satisfied: urllib3<3,>=1.26 in /storage/Users/currentUser/harmony/raytracepy/.venv-scripttest/lib/python3.10/site-packages (from requests->datashader>=0.13.0->raytracepy==0.0.1) (2.8.0)
+Requirement already satisfied: certifi>=2023.5.7 in /storage/Users/currentUser/harmony/raytracepy/.venv-scripttest/lib/python3.10/site-packages (from requests->datashader>=0.13.0->raytracepy==0.0.1) (2026.7.22)
+Building wheels for collected packages: raytracepy
+  Building editable for raytracepy (pyproject.toml): started
+  Building editable for raytracepy (pyproject.toml): finished with status 'done'
+  Created wheel for raytracepy: filename=raytracepy-0.0.1-0.editable-py3-none-any.whl size=2855 sha256=7aa5b5397ba7f304314db181881034da5098f69142484043422b2cd201687cbe
+  Stored in directory: /storage/Users/currentUser/tmp/pip-ephem-wheel-cache-yw0yr_xj/wheels/bc/b0/98/5ee57eb5da7a682bee752f1268f494fba3356187789dce0982
+Successfully built raytracepy
+Installing collected packages: raytracepy
+Successfully installed raytracepy-0.0.1
+
+DONE. Verify with:
+  /storage/Users/currentUser/harmony/raytracepy/.venv-scripttest/bin/python scripts/check_environment.py
+  NUMBA_DISABLE_JIT=1 /storage/Users/currentUser/harmony/raytracepy/.venv-scripttest/bin/python -m pytest -q tests/
++ echo install-exit=0
+install-exit=0
++ echo '== 验证导入 =='
+== 验证导入 ==
++ .venv-scripttest/bin/python -c 'import raytracepy, numpy, numba, llvmlite, scipy, pandas, plotly, datashader; print('\''import OK'\''); print(numpy.__version__, numba.__version__, llvmlite.__version__)'
+/storage/Users/currentUser/harmony/raytracepy/.venv-scripttest/lib/python3.10/site-packages/datashader/__init__.py:6: FutureWarning: param.version.Version has been deprecated and will be removed in a future version.
+  __version__ = str(param.version.Version(fpath=__file__, archive_commit="$Format:%h$",
+/storage/Users/currentUser/harmony/raytracepy/.venv-scripttest/lib/python3.10/site-packages/param/version.py:200: FutureWarning: param.version.run_cmd has been deprecated and will be removed in a future version.
+  remotes = run_cmd([cmd, 'remote', '-v'],
+import OK
+1.26.4 0.61.2 0.44.0
++ echo import-exit=0
+import-exit=0
++ echo '== 冒烟仿真 =='
+== 冒烟仿真 ==
++ NUMBA_DISABLE_JIT=1
++ .venv-scripttest/bin/python -c $'\nimport raytracepy as rpy, numpy as np\ng = rpy.Plane(name=\'ground\', position=np.array([0,0,0.],dtype=\'float64\'), normal=np.array([0,0,1.],dtype=\'float64\'), length=20, width=20, bins=(20,20))\nl = rpy.Light(position=np.array([0,0,5.],dtype=\'float64\'), direction=np.array([0,0,-1.],dtype=\'float64\'), num_traces=100, theta_func=1)\ns = rpy.RayTrace(planes=g, lights=l, total_num_rays=10000)\ns.run(); print(\'smoke OK, hits =\', g.hits.shape[0])\n'
+smoke OK, hits = 6340
++ echo smoke-exit=0
+smoke-exit=0
++ echo '== 测试 =='
+== 测试 ==
++ cd .worktrees/deps
++ NUMBA_DISABLE_JIT=1
++ /storage/Users/currentUser/harmony/raytracepy/.venv-scripttest/bin/python -m pytest -q tests/ -p no:cacheprovider --no-cov
++ tail -2
+.......                                                                  [100%]
+7 passed in 0.71s
++ echo pytest-exit=0
+pytest-exit=0

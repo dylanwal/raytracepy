@@ -1,0 +1,5 @@
+  已链接 shim: numba/_dispatcher.cpython-310-aarch64-linux-gnu.so
+  已链接 shim: numba/core/typeconv/_typeconv.cpython-310-aarch64-linux-gnu.so
+  已链接 shim: numba/np/ufunc/omppool.cpython-310-aarch64-linux-gnu.so
+  已链接 shim: numba/np/ufunc/workqueue.cpython-310-aarch64-linux-gnu.so
+共修补 4 个扩展

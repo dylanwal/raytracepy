@@ -5,7 +5,27 @@ dtype = "float64"
 
 import numba  # import all numba stuff here so it can be toggled on/off
 njit = numba.njit
-numba.config.DISABLE_JIT = False
+<<<<<<< Updated upstream
+# Numba reads NUMBA_DISABLE_JIT at import time and disables compilation when it
+# is set, but the unconditional assignment below would override that request
+# again.  Keep the upstream default (JIT enabled) while honouring an explicit
+# opt-out, which is required on targets where the JIT back end produces
+# artefacts that cannot execute.
+if os.environ.get("NUMBA_DISABLE_JIT", "").strip().lower() not in {
+    "1",
+    "true",
+    "yes",
+    "on",
+=======
+# Numba reads NUMBA_DISABLE_JIT during import.  Preserve the upstream default
+# (JIT enabled), but do not override an explicit opt-out.  This is required on
+# platforms where compiling succeeds but executing the generated code is not
+# supported; users can select the pure-Python path with NUMBA_DISABLE_JIT=1.
+if os.environ.get("NUMBA_DISABLE_JIT", "").strip().lower() not in {
+    "1", "true", "yes", "on"
+>>>>>>> Stashed changes
+}:
+    numba.config.DISABLE_JIT = False
 
 from functools import wraps
 from time import time

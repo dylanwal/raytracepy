@@ -1,0 +1,21 @@
+# 环境准备工具清单（快照）
+# 采集日期：2026-09-26
+# 来源目录：~/.local/ohos-python-tools（仓库外）
+# 格式：sha256  size  相对路径
+#
+# 说明：本清单记录工具目录中的脚本与预编译 wheel。其中 selfsign.py 为第三方
+#       工具（hqzing/ohos-selfsign，0BSD），不可直接 vendor；Alpine apk
+#       （pyapks/，18 个）与 harmonybrew 的 libffi 未逐项登记。来源见 README.md。
+
+6accef4182cf37f9       3420  add_stlshim.py
+17d641408cb9a091        970  fixall.py
+ba6429cc2a7a66e5       5091  fixcompat.py
+31d5baadbf08a967       4392  fixwheels.py
+f03d4d25a76b9100       1295  scratch/repro.py
+86f782502af2ba02        644  scratch/run_ref.py
+7df6eb1ca6b00a3f      20171  selfsign.py
+9e7fdf4c5e9e37af       3820  setup_py310.sh
+dd33cb6db9883864       1738  signall.py
+173bab646a730b55       1313  stlshim.cpp
+c153d4bb7822164e    1776947  wheels/llvmlite-0.44.0-cp310-cp310-linux_aarch64.whl
+d09f3e717e6cd8fe    3572678  wheels/numba-0.61.2-cp310-cp310-linux_aarch64.whl

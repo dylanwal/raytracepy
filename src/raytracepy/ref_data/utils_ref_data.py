@@ -1,7 +1,7 @@
 from typing import Tuple
 
 import numpy as np
-from scipy.integrate import cumtrapz
+from scipy.integrate import cumulative_trapezoid
 
 
 def generate_cdf(func, npts: int = 11, x_range: Tuple[float, float] = (0, 1)) -> Tuple[np.ndarray, np.ndarray]:
@@ -28,8 +28,7 @@ def generate_cdf(func, npts: int = 11, x_range: Tuple[float, float] = (0, 1)) ->
     y = func(x)
 
     y_norm = y / np.trapz(y, x)
-    cdf = cumtrapz(y_norm, x)
-    cdf = np.insert(cdf, 0, 0)
+    cdf = cumulative_trapezoid(y_norm, x, initial=0)
 
     # deal with numerical round off errors
     cdf, index_ = np.unique(cdf, return_index=True)
